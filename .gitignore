@@ -1,0 +1,9 @@
+.idea
+
+
+#Hardhat files
+smartcontracts/.env
+smartcontracts/cache
+smartcontracts/artifacts
+smartcontracts/node_modules
+smartcontracts/deployments
