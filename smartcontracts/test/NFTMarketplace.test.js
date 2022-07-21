@@ -1,5 +1,6 @@
 const { expect } = require("chai")
 const { ethers, deployments } = require("hardhat")
+const {BigNumber} = require("ethers");
 
 describe("NFT marketplace", async () => {
   let
@@ -22,4 +23,12 @@ describe("NFT marketplace", async () => {
     expect(address).not.to.equal("");
     expect(address).not.to.equal(undefined);
   });
+
+  describe("adding an item", async () => {
+    it('should be reverted if item price is not greater than zero', async () => {
+      await expect(marketplaceContract.addItem(0)).to.be.reverted
+      await expect(marketplaceContract.addItem(BigNumber.from("1"))).not.to.be.reverted;
+    });
+  })
+
 })
