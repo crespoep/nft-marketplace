@@ -36,18 +36,26 @@ describe("NFT marketplace", async () => {
   describe("adding an item", async () => {
     it('should be reverted if item price is not greater than zero', async () => {
       await expect(
-        marketplaceContract.addItem(mockERC165.address, 0)
+        marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"), 0)
       ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
       await expect(
-        marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"))
+        marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"), BigNumber.from("1"))
       ).not.to.be.revertedWith("PriceMustBeGreaterThanZero()");
     });
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
       await mockERC165.mock.supportsInterface.returns(false);
       await expect(
-        marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"))
+        marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"), BigNumber.from("1"))
       ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
+    });
+
+    it('should be add the new item to the listing successfully', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+      await marketplaceContract.addItem(mockERC165.address, BigNumber.from("1"), BigNumber.from("1"))
+      const nft = await marketplaceContract.nftByAddressAndId(mockERC165.address, 1)
+
+      expect(nft.seller).to.equal(deployer.address)
     });
   })
 })
