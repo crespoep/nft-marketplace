@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 error PriceMustBeGreaterThanZero();
+error NFTAlreadyExistsInTheMarketplace();
 error ProvidedAddressDoesNotSupportERC721Interface();
 
 contract NFTMarketplace is ERC165 {
@@ -21,7 +22,22 @@ contract NFTMarketplace is ERC165 {
 
   mapping(address => mapping(uint256 => NFT)) public nftByAddressAndId;
 
-  function addItem(address _nftAddress, uint256 _tokenId, uint256 _itemPrice) external {
+  modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
+    NFT memory nft = nftByAddressAndId[_nftAddress][_tokenId];
+    if (nft.seller != address(0)) {
+      revert NFTAlreadyExistsInTheMarketplace();
+    }
+    _;
+  }
+
+  function addItem(
+    address _nftAddress,
+    uint256 _tokenId,
+    uint256 _itemPrice
+  )
+    external
+    notAlreadyAdded(_nftAddress, _tokenId)
+  {
     if (_itemPrice == 0) {
       revert PriceMustBeGreaterThanZero();
     }
@@ -30,7 +46,7 @@ contract NFTMarketplace is ERC165 {
       revert ProvidedAddressDoesNotSupportERC721Interface();
     }
 
-    nftByAddressAndId[_nftAddress][_tokenId] = NFT({ seller: msg.sender, price: _itemPrice });
+    nftByAddressAndId[_nftAddress][_tokenId] = NFT(msg.sender, _itemPrice);
 
     emit NFTAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
   }

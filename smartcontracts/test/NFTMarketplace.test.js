@@ -53,6 +53,14 @@ describe("NFT marketplace", async () => {
       ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
     });
 
+    it('should be reverted if nft was already added in the marketplace', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+      await marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE);
+      await expect(
+        marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE)
+      ).to.be.revertedWith("NFTAlreadyExistsInTheMarketplace()")
+    });
+
     it('should be add the new item to the listing successfully', async () => {
       await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.addItem(
