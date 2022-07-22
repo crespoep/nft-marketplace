@@ -12,6 +12,13 @@ contract NFTMarketplace is ERC165 {
     uint256 price;
   }
 
+  event NFTAdded(
+    address seller,
+    address nftAddress,
+    uint256 price,
+    uint256 tokenId
+  );
+
   mapping(address => mapping(uint256 => NFT)) public nftByAddressAndId;
 
   function addItem(address _nftAddress, uint256 _tokenId, uint256 _itemPrice) external {
@@ -25,5 +32,6 @@ contract NFTMarketplace is ERC165 {
 
     nftByAddressAndId[_nftAddress][_tokenId] = NFT({ seller: msg.sender, price: _itemPrice });
 
+    emit NFTAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
   }
 }
