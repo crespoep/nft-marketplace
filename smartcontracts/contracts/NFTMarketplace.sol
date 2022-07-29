@@ -27,12 +27,25 @@ contract NFTMarketplace is ERC165 {
     uint256 tokenId
   );
 
+  event ItemUpdated(
+    address nftAddress,
+    uint256 tokenId,
+    uint256 price
+  );
+
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
   modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
     Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];
     if (nft.seller != address(0)) {
       revert ItemAlreadyExistsInTheMarketplace();
+    }
+    _;
+  }
+
+  modifier itemListed(address _nftAddress, uint256 _tokenId) {
+    if (itemByAddressAndId[_nftAddress][_tokenId].price == 0) {
+      revert ItemIsNotListedInTheMarketplace();
     }
     _;
   }
@@ -56,12 +69,25 @@ contract NFTMarketplace is ERC165 {
     emit ItemAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
   }
 
-  function removeItem(address _nftAddress, uint256 _tokenId) external {
-    if (itemByAddressAndId[_nftAddress][_tokenId].price == 0) {
-      revert ItemIsNotListedInTheMarketplace();
-    }
+  function removeItem(address _nftAddress, uint256 _tokenId) external itemListed(_nftAddress, _tokenId) {
     delete itemByAddressAndId[_nftAddress][_tokenId];
+
     emit ItemRemoved(_nftAddress, _tokenId);
+  }
+
+  function updateItem(
+    address _nftAddress,
+    uint256 _tokenId,
+    uint256 _price
+  ) external
+    itemListed(_nftAddress, _tokenId)
+  {
+    _checkPriceGreaterThanZero(_price);
+
+    Item storage _item = itemByAddressAndId[_nftAddress][_tokenId];
+    _item.price = _price;
+
+    emit ItemUpdated(_nftAddress, _tokenId, _price);
   }
 
   function _checkPriceGreaterThanZero(uint256 _itemPrice) private pure {

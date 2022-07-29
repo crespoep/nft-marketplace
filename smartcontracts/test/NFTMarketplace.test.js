@@ -75,8 +75,8 @@ describe("NFT marketplace", async () => {
     });
   })
 
-  describe("removing an NFT", async () => {
-    it('should fail if NFT does not exist', async () => {
+  describe("removing an item", async () => {
+    it('should fail if item does not exist', async () => {
       await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.removeItem(
         mockERC165.address,
@@ -98,6 +98,46 @@ describe("NFT marketplace", async () => {
 
       const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
       expect(item.price).to.equal(0)
+    });
+  })
+
+  describe("updating an item", async () => {
+    it('should fail if item does not exist', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+      await expect(marketplaceContract.updateItem(
+        mockERC165.address,
+        ITEM_ID_EXAMPLE,
+        ITEM_PRICE_EXAMPLE
+      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
+    });
+
+    it('should fail if new price is not greater than zero', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+
+      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      const newPrice = 0;
+      await expect(
+        marketplaceContract.updateItem(mockERC165.address, ITEM_ID_EXAMPLE, newPrice)
+      ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
+    });
+
+    it('should change item price correctly', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+
+      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      const newPrice = ITEM_PRICE_EXAMPLE * 2;
+      await expect(
+        marketplaceContract.updateItem(mockERC165.address, ITEM_ID_EXAMPLE, newPrice)
+      ).to
+        .emit(marketplaceContract, "ItemUpdated")
+        .withArgs(
+          mockERC165.address,
+          ITEM_ID_EXAMPLE,
+          newPrice
+        );
+
+      const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
+      expect(item.price).to.equal(newPrice)
     });
   })
 })
