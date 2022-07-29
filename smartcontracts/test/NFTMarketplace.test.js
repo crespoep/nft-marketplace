@@ -94,7 +94,10 @@ describe("NFT marketplace", async () => {
       await expect(marketplaceContract.removeItem(
         mockERC165.address,
         ITEM_ID_EXAMPLE
-      )).to.emit(marketplaceContract, "ItemRemoved");
+      )).to.emit(marketplaceContract, "ItemRemoved").withArgs(mockERC165.address, ITEM_ID_EXAMPLE);
+
+      const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
+      expect(item.price).to.equal(0)
     });
   })
 })

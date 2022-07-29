@@ -23,7 +23,8 @@ contract NFTMarketplace is ERC165 {
   );
 
   event ItemRemoved(
-
+    address nftAddress,
+    uint256 tokenId
   );
 
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
@@ -59,7 +60,8 @@ contract NFTMarketplace is ERC165 {
     if (itemByAddressAndId[_nftAddress][_tokenId].price == 0) {
       revert ItemIsNotListedInTheMarketplace();
     }
-    emit ItemRemoved();
+    delete itemByAddressAndId[_nftAddress][_tokenId];
+    emit ItemRemoved(_nftAddress, _tokenId);
   }
 
   function _checkPriceGreaterThanZero(uint256 _itemPrice) private pure {
