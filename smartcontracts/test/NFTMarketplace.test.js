@@ -74,4 +74,27 @@ describe("NFT marketplace", async () => {
       expect(nft.price.toNumber()).to.equal(1)
     });
   })
+
+  describe("removing an NFT", async () => {
+    it('should fail if NFT does not exist', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+      await expect(marketplaceContract.removeItem(
+        mockERC165.address,
+        NFT_TOKEN_ID_EXAMPLE
+      )).to.be.revertedWith("NFTIsNotListedInTheMarketplace()")
+    });
+
+    it('should remove the item from listing', async () => {
+      await mockERC165.mock.supportsInterface.returns(true);
+
+      await marketplaceContract.addItem(
+        mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE
+      )
+
+      await expect(marketplaceContract.removeItem(
+        mockERC165.address,
+        NFT_TOKEN_ID_EXAMPLE
+      )).to.emit(marketplaceContract, "NFTRemoved");
+    });
+  })
 })
