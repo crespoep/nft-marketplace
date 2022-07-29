@@ -6,8 +6,8 @@ const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 const IERC165 = require('../artifacts/contracts/NFT.sol/NFT.json');
 
 describe("NFT marketplace", async () => {
-  const NFT_PRICE_EXAMPLE = BigNumber.from("1")
-  const NFT_TOKEN_ID_EXAMPLE = BigNumber.from("1")
+  const ITEM_PRICE_EXAMPLE = BigNumber.from("1")
+  const ITEM_ID_EXAMPLE = BigNumber.from("1")
 
   let
     deployer,
@@ -39,36 +39,36 @@ describe("NFT marketplace", async () => {
   describe("adding an item", async () => {
     it('should be reverted if item price is not greater than zero', async () => {
       await expect(
-        marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, 0)
+        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, 0)
       ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
       await expect(
-        marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE)
+        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).not.to.be.revertedWith("PriceMustBeGreaterThanZero()");
     });
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
       await mockERC165.mock.supportsInterface.returns(false);
       await expect(
-        marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE)
+        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
     });
 
     it('should be reverted if nft was already added in the marketplace', async () => {
       await mockERC165.mock.supportsInterface.returns(true);
-      await marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE);
+      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE);
       await expect(
-        marketplaceContract.addItem(mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE)
-      ).to.be.revertedWith("NFTAlreadyExistsInTheMarketplace()")
+        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWith("ItemAlreadyExistsInTheMarketplace()")
     });
 
     it('should be add the new item to the listing successfully', async () => {
       await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.addItem(
-        mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE)
-      ).to.emit(marketplaceContract, "NFTAdded")
-        .withArgs(deployer.address, mockERC165.address, NFT_PRICE_EXAMPLE, NFT_TOKEN_ID_EXAMPLE)
+        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      ).to.emit(marketplaceContract, "ItemAdded")
+        .withArgs(deployer.address, mockERC165.address, ITEM_PRICE_EXAMPLE, ITEM_ID_EXAMPLE)
 
-      const nft = await marketplaceContract.nftByAddressAndId(mockERC165.address, 1)
+      const nft = await marketplaceContract.itemByAddressAndId(mockERC165.address, 1)
 
       expect(nft.seller).to.equal(deployer.address)
       expect(nft.price.toNumber()).to.equal(1)
@@ -80,21 +80,21 @@ describe("NFT marketplace", async () => {
       await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.removeItem(
         mockERC165.address,
-        NFT_TOKEN_ID_EXAMPLE
-      )).to.be.revertedWith("NFTIsNotListedInTheMarketplace()")
+        ITEM_ID_EXAMPLE
+      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
     });
 
     it('should remove the item from listing', async () => {
       await mockERC165.mock.supportsInterface.returns(true);
 
       await marketplaceContract.addItem(
-        mockERC165.address, NFT_TOKEN_ID_EXAMPLE, NFT_PRICE_EXAMPLE
+        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
       )
 
       await expect(marketplaceContract.removeItem(
         mockERC165.address,
-        NFT_TOKEN_ID_EXAMPLE
-      )).to.emit(marketplaceContract, "NFTRemoved");
+        ITEM_ID_EXAMPLE
+      )).to.emit(marketplaceContract, "ItemRemoved");
     });
   })
 })

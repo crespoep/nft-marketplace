@@ -5,33 +5,33 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 error PriceMustBeGreaterThanZero();
-error NFTAlreadyExistsInTheMarketplace();
+error ItemAlreadyExistsInTheMarketplace();
 error ProvidedAddressDoesNotSupportERC721Interface();
-error NFTIsNotListedInTheMarketplace();
+error ItemIsNotListedInTheMarketplace();
 
 contract NFTMarketplace is ERC165 {
-  struct NFT {
+  struct Item {
     address seller;
     uint256 price;
   }
 
-  event NFTAdded(
+  event ItemAdded(
     address seller,
     address nftAddress,
     uint256 price,
     uint256 tokenId
   );
 
-  event NFTRemoved(
+  event ItemRemoved(
 
   );
 
-  mapping(address => mapping(uint256 => NFT)) public nftByAddressAndId;
+  mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
   modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
-    NFT memory nft = nftByAddressAndId[_nftAddress][_tokenId];
+    Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];
     if (nft.seller != address(0)) {
-      revert NFTAlreadyExistsInTheMarketplace();
+      revert ItemAlreadyExistsInTheMarketplace();
     }
     _;
   }
@@ -50,16 +50,16 @@ contract NFTMarketplace is ERC165 {
       revert ProvidedAddressDoesNotSupportERC721Interface();
     }
 
-    nftByAddressAndId[_nftAddress][_tokenId] = NFT(msg.sender, _itemPrice);
+    itemByAddressAndId[_nftAddress][_tokenId] = Item(msg.sender, _itemPrice);
 
-    emit NFTAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
+    emit ItemAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
   }
 
   function removeItem(address _nftAddress, uint256 _tokenId) external {
-    if (nftByAddressAndId[_nftAddress][_tokenId].price == 0) {
-      revert NFTIsNotListedInTheMarketplace();
+    if (itemByAddressAndId[_nftAddress][_tokenId].price == 0) {
+      revert ItemIsNotListedInTheMarketplace();
     }
-    emit NFTRemoved();
+    emit ItemRemoved();
   }
 
   function _checkPriceGreaterThanZero(uint256 _itemPrice) private pure {
