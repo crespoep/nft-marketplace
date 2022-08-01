@@ -107,6 +107,8 @@ contract NFTMarketplace is ERC165 {
 
     payments[_item.seller] += msg.value;
 
+    delete itemByAddressAndId[_nftAddress][_tokenId];
+
     emit ItemBought(_item.seller, _item.price, msg.sender);
   }
 

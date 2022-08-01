@@ -163,6 +163,22 @@ describe("NFT marketplace", async () => {
 
     it.skip('should transfer ownership to buyer', async () => {});
 
+    it('should remove item from the listing after operation is done', async () => {
+      await marketplaceContract.addItem(
+        itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+      )
+
+      await expect(marketplaceContract.buyItem(
+        itemMock.address,
+        ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
+      ))
+
+      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, ITEM_ID_EXAMPLE);
+
+      expect(item.seller).to.equal(ethers.constants.AddressZero)
+      expect(item.price).to.equal(BigNumber.from("0"))
+    });
+
     it('should emit the ItemBought event', async () => {
       await marketplaceContract.connect(user1).addItem(
         itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
