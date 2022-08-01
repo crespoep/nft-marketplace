@@ -25,6 +25,8 @@ describe("NFT marketplace", async () => {
     marketplaceContract = await ethers.getContractAt("NFTMarketplace", Marketplace.address)
 
     mockERC165 = await deployMockContract(deployer, IERC165.abi);
+
+    await mockERC165.mock.supportsInterface.returns(true);
   })
 
   it('should be deployed successfully', async () => {
@@ -48,13 +50,13 @@ describe("NFT marketplace", async () => {
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
       await mockERC165.mock.supportsInterface.returns(false);
+
       await expect(
         marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
     });
 
     it('should be reverted if nft was already added in the marketplace', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
       await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE);
       await expect(
         marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
@@ -62,7 +64,6 @@ describe("NFT marketplace", async () => {
     });
 
     it('should be add the new item to the listing successfully', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.addItem(
         mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.emit(marketplaceContract, "ItemAdded")
@@ -77,7 +78,6 @@ describe("NFT marketplace", async () => {
 
   describe("removing an item", async () => {
     it('should fail if item does not exist', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.removeItem(
         mockERC165.address,
         ITEM_ID_EXAMPLE
@@ -85,8 +85,6 @@ describe("NFT marketplace", async () => {
     });
 
     it('should remove the item from listing', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
-
       await marketplaceContract.addItem(
         mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
       )
@@ -103,7 +101,6 @@ describe("NFT marketplace", async () => {
 
   describe("updating an item", async () => {
     it('should fail if item does not exist', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
       await expect(marketplaceContract.updateItem(
         mockERC165.address,
         ITEM_ID_EXAMPLE,
@@ -112,8 +109,6 @@ describe("NFT marketplace", async () => {
     });
 
     it('should fail if new price is not greater than zero', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
-
       await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       const newPrice = 0;
       await expect(
@@ -122,8 +117,6 @@ describe("NFT marketplace", async () => {
     });
 
     it('should change item price correctly', async () => {
-      await mockERC165.mock.supportsInterface.returns(true);
-
       await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       const newPrice = ITEM_PRICE_EXAMPLE * 2;
       await expect(
@@ -138,6 +131,15 @@ describe("NFT marketplace", async () => {
 
       const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
       expect(item.price).to.equal(newPrice)
+    });
+  })
+
+  describe("buy an item", async () => {
+    it('should fail if items does not exist', async () => {
+      await expect(marketplaceContract.buyItem(
+        mockERC165.address,
+        ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
+      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
     });
   })
 })

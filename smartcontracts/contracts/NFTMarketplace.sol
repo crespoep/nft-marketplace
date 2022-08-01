@@ -90,6 +90,10 @@ contract NFTMarketplace is ERC165 {
     emit ItemUpdated(_nftAddress, _tokenId, _price);
   }
 
+  function buyItem(address _nftAddress, uint256 _tokenId) payable external itemListed(_nftAddress, _tokenId) {
+
+  }
+
   function _checkPriceGreaterThanZero(uint256 _itemPrice) private pure {
     if (_itemPrice == 0) {
       revert PriceMustBeGreaterThanZero();
