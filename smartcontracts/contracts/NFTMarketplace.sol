@@ -8,6 +8,7 @@ error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
 error ProvidedAddressDoesNotSupportERC721Interface();
 error ItemIsNotListedInTheMarketplace();
+error PaymentIsNotExact();
 
 contract NFTMarketplace is ERC165 {
   struct Item {
@@ -91,7 +92,15 @@ contract NFTMarketplace is ERC165 {
   }
 
   function buyItem(address _nftAddress, uint256 _tokenId) payable external itemListed(_nftAddress, _tokenId) {
+    Item memory _item = itemByAddressAndId[_nftAddress][_tokenId];
 
+    _checkPaymentIsExact(_item);
+  }
+
+  function _checkPaymentIsExact(Item memory _item) private view {
+    if (msg.value != _item.price) {
+      revert PaymentIsNotExact();
+    }
   }
 
   function _checkPriceGreaterThanZero(uint256 _itemPrice) private pure {

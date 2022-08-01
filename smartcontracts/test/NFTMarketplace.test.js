@@ -6,7 +6,7 @@ const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 const IERC165 = require('../artifacts/contracts/NFT.sol/NFT.json');
 
 describe("NFT marketplace", async () => {
-  const ITEM_PRICE_EXAMPLE = BigNumber.from("1")
+  const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
   const ITEM_ID_EXAMPLE = BigNumber.from("1")
 
   let
@@ -63,7 +63,7 @@ describe("NFT marketplace", async () => {
       ).to.be.revertedWith("ItemAlreadyExistsInTheMarketplace()")
     });
 
-    it('should be add the new item to the listing successfully', async () => {
+    it('should add the new item to the listing successfully', async () => {
       await expect(marketplaceContract.addItem(
         mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.emit(marketplaceContract, "ItemAdded")
@@ -72,7 +72,7 @@ describe("NFT marketplace", async () => {
       const nft = await marketplaceContract.itemByAddressAndId(mockERC165.address, 1)
 
       expect(nft.seller).to.equal(deployer.address)
-      expect(nft.price.toNumber()).to.equal(1)
+      expect(nft.price).to.equal(ITEM_PRICE_EXAMPLE)
     });
   })
 
@@ -118,7 +118,8 @@ describe("NFT marketplace", async () => {
 
     it('should change item price correctly', async () => {
       await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
-      const newPrice = ITEM_PRICE_EXAMPLE * 2;
+      const newPrice = ITEM_PRICE_EXAMPLE.mul(2);
+
       await expect(
         marketplaceContract.updateItem(mockERC165.address, ITEM_ID_EXAMPLE, newPrice)
       ).to
@@ -140,6 +141,22 @@ describe("NFT marketplace", async () => {
         mockERC165.address,
         ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
       )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
+    });
+
+    it('should fail if payment is not exactly equal to item price', async () => {
+      await marketplaceContract.addItem(
+        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+      )
+
+      await expect(marketplaceContract.buyItem(
+        mockERC165.address,
+        ITEM_ID_EXAMPLE, { value: ethers.utils.parseEther("0.9") }
+      )).to.be.revertedWith("PaymentIsNotExact()")
+
+      await expect(marketplaceContract.buyItem(
+        mockERC165.address,
+        ITEM_ID_EXAMPLE, { value: ethers.utils.parseEther("1.1") }
+      )).to.be.revertedWith("PaymentIsNotExact()")
     });
   })
 })
