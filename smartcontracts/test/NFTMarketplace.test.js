@@ -11,22 +11,24 @@ describe("NFT marketplace", async () => {
 
   let
     deployer,
+    user1,
+    user2,
     Marketplace,
     marketplaceContract,
-    mockERC165
+    itemMock
   ;
 
   beforeEach(async () => {
     await deployments.fixture(["test"]);
 
-    [deployer] = await ethers.getSigners();
+    [deployer, user1, user2] = await ethers.getSigners();
 
     Marketplace = await deployments.get("NFTMarketplace");
     marketplaceContract = await ethers.getContractAt("NFTMarketplace", Marketplace.address)
 
-    mockERC165 = await deployMockContract(deployer, IERC165.abi);
+    itemMock = await deployMockContract(deployer, IERC165.abi);
 
-    await mockERC165.mock.supportsInterface.returns(true);
+    await itemMock.mock.supportsInterface.returns(true);
   })
 
   it('should be deployed successfully', async () => {
@@ -41,35 +43,35 @@ describe("NFT marketplace", async () => {
   describe("adding an item", async () => {
     it('should be reverted if item price is not greater than zero', async () => {
       await expect(
-        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, 0)
+        marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, 0)
       ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
       await expect(
-        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+        marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).not.to.be.revertedWith("PriceMustBeGreaterThanZero()");
     });
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
-      await mockERC165.mock.supportsInterface.returns(false);
+      await itemMock.mock.supportsInterface.returns(false);
 
       await expect(
-        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+        marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
     });
 
     it('should be reverted if nft was already added in the marketplace', async () => {
-      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE);
+      await marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE);
       await expect(
-        marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+        marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.be.revertedWith("ItemAlreadyExistsInTheMarketplace()")
     });
 
     it('should add the new item to the listing successfully', async () => {
       await expect(marketplaceContract.addItem(
-        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+        itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       ).to.emit(marketplaceContract, "ItemAdded")
-        .withArgs(deployer.address, mockERC165.address, ITEM_PRICE_EXAMPLE, ITEM_ID_EXAMPLE)
+        .withArgs(deployer.address, itemMock.address, ITEM_PRICE_EXAMPLE, ITEM_ID_EXAMPLE)
 
-      const nft = await marketplaceContract.itemByAddressAndId(mockERC165.address, 1)
+      const nft = await marketplaceContract.itemByAddressAndId(itemMock.address, 1)
 
       expect(nft.seller).to.equal(deployer.address)
       expect(nft.price).to.equal(ITEM_PRICE_EXAMPLE)
@@ -79,22 +81,22 @@ describe("NFT marketplace", async () => {
   describe("removing an item", async () => {
     it('should fail if item does not exist', async () => {
       await expect(marketplaceContract.removeItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE
       )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
     });
 
     it('should remove the item from listing', async () => {
       await marketplaceContract.addItem(
-        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+        itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
       )
 
       await expect(marketplaceContract.removeItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE
-      )).to.emit(marketplaceContract, "ItemRemoved").withArgs(mockERC165.address, ITEM_ID_EXAMPLE);
+      )).to.emit(marketplaceContract, "ItemRemoved").withArgs(itemMock.address, ITEM_ID_EXAMPLE);
 
-      const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
+      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, ITEM_ID_EXAMPLE)
       expect(item.price).to.equal(0)
     });
   })
@@ -102,35 +104,35 @@ describe("NFT marketplace", async () => {
   describe("updating an item", async () => {
     it('should fail if item does not exist', async () => {
       await expect(marketplaceContract.updateItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE,
         ITEM_PRICE_EXAMPLE
       )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
     });
 
     it('should fail if new price is not greater than zero', async () => {
-      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      await marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       const newPrice = 0;
       await expect(
-        marketplaceContract.updateItem(mockERC165.address, ITEM_ID_EXAMPLE, newPrice)
+        marketplaceContract.updateItem(itemMock.address, ITEM_ID_EXAMPLE, newPrice)
       ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
     });
 
     it('should change item price correctly', async () => {
-      await marketplaceContract.addItem(mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
+      await marketplaceContract.addItem(itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE)
       const newPrice = ITEM_PRICE_EXAMPLE.mul(2);
 
       await expect(
-        marketplaceContract.updateItem(mockERC165.address, ITEM_ID_EXAMPLE, newPrice)
+        marketplaceContract.updateItem(itemMock.address, ITEM_ID_EXAMPLE, newPrice)
       ).to
         .emit(marketplaceContract, "ItemUpdated")
         .withArgs(
-          mockERC165.address,
+          itemMock.address,
           ITEM_ID_EXAMPLE,
           newPrice
         );
 
-      const item = await marketplaceContract.itemByAddressAndId(mockERC165.address, ITEM_ID_EXAMPLE)
+      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, ITEM_ID_EXAMPLE)
       expect(item.price).to.equal(newPrice)
     });
   })
@@ -138,25 +140,39 @@ describe("NFT marketplace", async () => {
   describe("buy an item", async () => {
     it('should fail if items does not exist', async () => {
       await expect(marketplaceContract.buyItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
       )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
     });
 
     it('should fail if payment is not exactly equal to item price', async () => {
       await marketplaceContract.addItem(
-        mockERC165.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+        itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
       )
 
       await expect(marketplaceContract.buyItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE, { value: ethers.utils.parseEther("0.9") }
       )).to.be.revertedWith("PaymentIsNotExact()")
 
       await expect(marketplaceContract.buyItem(
-        mockERC165.address,
+        itemMock.address,
         ITEM_ID_EXAMPLE, { value: ethers.utils.parseEther("1.1") }
       )).to.be.revertedWith("PaymentIsNotExact()")
+    });
+
+    it.skip('should transfer ownership to buyer', async () => {});
+
+    it('should emit the ItemBought event', async () => {
+      await marketplaceContract.connect(user1).addItem(
+        itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+      )
+
+      await expect(marketplaceContract.connect(user2).buyItem(
+        itemMock.address,
+        ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
+      )).to.emit(marketplaceContract, "ItemBought")
+        .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
     });
   })
 })

@@ -34,6 +34,12 @@ contract NFTMarketplace is ERC165 {
     uint256 price
   );
 
+  event ItemBought(
+    address seller,
+    uint256 price,
+    address buyer
+  );
+
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
   modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
@@ -95,6 +101,8 @@ contract NFTMarketplace is ERC165 {
     Item memory _item = itemByAddressAndId[_nftAddress][_tokenId];
 
     _checkPaymentIsExact(_item);
+
+    emit ItemBought(_item.seller, _item.price, msg.sender);
   }
 
   function _checkPaymentIsExact(Item memory _item) private view {
