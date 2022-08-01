@@ -174,5 +174,47 @@ describe("NFT marketplace", async () => {
       )).to.emit(marketplaceContract, "ItemBought")
         .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
     });
+
+    describe("withdrawal", async () => {
+      it('should be done successfully', async () => {
+        await marketplaceContract.connect(user1).addItem(
+          itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+        )
+
+        await expect(marketplaceContract.connect(user2).buyItem(
+          itemMock.address,
+          ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
+        ))
+
+        await expect(
+          await marketplaceContract.connect(user1).withdrawPayments()
+        ).to.changeEtherBalance(user1, ITEM_PRICE_EXAMPLE);
+      });
+
+      it('should fail if trying to withdraw twice in a row', async () => {
+        await marketplaceContract.connect(user1).addItem(
+          itemMock.address, ITEM_ID_EXAMPLE, ITEM_PRICE_EXAMPLE
+        )
+
+        await expect(marketplaceContract.connect(user2).buyItem(
+          itemMock.address,
+          ITEM_ID_EXAMPLE, { value: ITEM_PRICE_EXAMPLE }
+        ))
+
+        await expect(
+          await marketplaceContract.connect(user1).withdrawPayments()
+        ).to.changeEtherBalance(user1, ITEM_PRICE_EXAMPLE);
+
+        await expect(
+          marketplaceContract.connect(user1).withdrawPayments()
+        ).to.be.revertedWith("NoPaymentsAvailableToWithdraw()")
+      });
+
+      it('should fail if there is no payment available to withdraw', async () => {
+        await expect(
+          marketplaceContract.connect(user1).withdrawPayments()
+        ).to.be.revertedWith("NoPaymentsAvailableToWithdraw()")
+      });
+    })
   })
 })

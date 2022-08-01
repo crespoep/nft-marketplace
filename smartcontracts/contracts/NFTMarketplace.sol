@@ -9,6 +9,7 @@ error ItemAlreadyExistsInTheMarketplace();
 error ProvidedAddressDoesNotSupportERC721Interface();
 error ItemIsNotListedInTheMarketplace();
 error PaymentIsNotExact();
+error NoPaymentsAvailableToWithdraw();
 
 contract NFTMarketplace is ERC165 {
   struct Item {
@@ -41,6 +42,8 @@ contract NFTMarketplace is ERC165 {
   );
 
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
+
+  mapping(address => uint256) private payments;
 
   modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
     Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];
@@ -102,7 +105,20 @@ contract NFTMarketplace is ERC165 {
 
     _checkPaymentIsExact(_item);
 
+    payments[_item.seller] += msg.value;
+
     emit ItemBought(_item.seller, _item.price, msg.sender);
+  }
+
+  function withdrawPayments() external {
+    uint256 _payment = payments[msg.sender];
+
+    if (_payment == 0) {
+      revert NoPaymentsAvailableToWithdraw();
+    }
+    payments[msg.sender] = 0;
+
+    payable(msg.sender).transfer(_payment);
   }
 
   function _checkPaymentIsExact(Item memory _item) private view {
