@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -13,7 +14,7 @@ error PaymentIsNotExact();
 error NoPaymentsAvailableToWithdraw();
 error SellerCannotBuyItsOwnItem();
 
-contract NFTMarketplace is ERC165, ReentrancyGuard {
+contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
   struct Item {
     address seller;
     uint256 price;
