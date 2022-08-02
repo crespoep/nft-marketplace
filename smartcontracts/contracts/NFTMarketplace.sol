@@ -3,6 +3,7 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -12,7 +13,7 @@ error PaymentIsNotExact();
 error NoPaymentsAvailableToWithdraw();
 error SellerCannotBuyItsOwnItem();
 
-contract NFTMarketplace is ERC165 {
+contract NFTMarketplace is ERC165, ReentrancyGuard {
   struct Item {
     address seller;
     uint256 price;
@@ -101,7 +102,13 @@ contract NFTMarketplace is ERC165 {
     emit ItemUpdated(_nftAddress, _tokenId, _price);
   }
 
-  function buyItem(address _nftAddress, uint256 _tokenId) payable external itemListed(_nftAddress, _tokenId) {
+  function buyItem(
+    address _nftAddress,
+    uint256 _tokenId
+  ) payable external
+    itemListed(_nftAddress, _tokenId)
+    nonReentrant
+  {
     Item memory _item = itemByAddressAndId[_nftAddress][_tokenId];
 
     _checkBuyerIsNotTheSeller(_item);
@@ -114,7 +121,7 @@ contract NFTMarketplace is ERC165 {
     emit ItemBought(_item.seller, _item.price, msg.sender);
   }
 
-  function withdrawPayments() external {
+  function withdrawPayments() external nonReentrant {
     uint256 _payment = payments[msg.sender];
 
     if (_payment == 0) {
