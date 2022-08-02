@@ -121,7 +121,9 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
     _checkBuyerIsNotTheSeller(_item);
     _checkPaymentIsExact(_item);
 
-    payments[_item.seller] += msg.value;
+    uint256 _feePayment = platformFee * msg.value / 1e2;
+    payments[owner()] = _feePayment;
+    payments[_item.seller] += msg.value - _feePayment;
 
     delete itemByAddressAndId[_nftAddress][_tokenId];
 
