@@ -10,6 +10,7 @@ error ProvidedAddressDoesNotSupportERC721Interface();
 error ItemIsNotListedInTheMarketplace();
 error PaymentIsNotExact();
 error NoPaymentsAvailableToWithdraw();
+error SellerCannotBuyItsOwnItem();
 
 contract NFTMarketplace is ERC165 {
   struct Item {
@@ -103,6 +104,7 @@ contract NFTMarketplace is ERC165 {
   function buyItem(address _nftAddress, uint256 _tokenId) payable external itemListed(_nftAddress, _tokenId) {
     Item memory _item = itemByAddressAndId[_nftAddress][_tokenId];
 
+    _checkBuyerIsNotTheSeller(_item);
     _checkPaymentIsExact(_item);
 
     payments[_item.seller] += msg.value;
@@ -122,6 +124,12 @@ contract NFTMarketplace is ERC165 {
 
     (bool success, ) = payable(msg.sender).call{ value: _payment}("");
     require(success);
+  }
+
+  function _checkBuyerIsNotTheSeller(Item memory _item) private view {
+    if (msg.sender == _item.seller) {
+      revert SellerCannotBuyItsOwnItem();
+    }
   }
 
   function _checkPaymentIsExact(Item memory _item) private view {
