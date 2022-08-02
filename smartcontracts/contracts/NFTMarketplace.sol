@@ -120,7 +120,7 @@ contract NFTMarketplace is ERC165 {
     }
     payments[msg.sender] = 0;
 
-    (success, ) = payable(msg.sender).call{ value: _payment}("");
+    (bool success, ) = payable(msg.sender).call{ value: _payment}("");
     require(success);
   }
 
