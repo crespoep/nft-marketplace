@@ -31,14 +31,20 @@ describe("NFT marketplace", async () => {
     await itemMock.mock.supportsInterface.returns(true);
   })
 
-  it('should be deployed successfully', async () => {
-    const address = marketplaceContract.address;
+  describe("deployment", async () => {
+    it('should be done successfully', async () => {
+      const address = marketplaceContract.address;
 
-    expect(address).not.to.equal(null);
-    expect(address).not.to.equal(0x0);
-    expect(address).not.to.equal("");
-    expect(address).not.to.equal(undefined);
-  });
+      expect(address).not.to.equal(null);
+      expect(address).not.to.equal(0x0);
+      expect(address).not.to.equal("");
+      expect(address).not.to.equal(undefined);
+    });
+
+    it('should set the platform fee correctly', async () => {
+      expect(await marketplaceContract.platformFee()).to.equal(BigNumber.from("3"))
+    });
+  })
 
   describe("adding an item", async () => {
     it('should be reverted if item price is not greater than zero', async () => {

@@ -47,6 +47,8 @@ contract NFTMarketplace is ERC165, ReentrancyGuard {
 
   mapping(address => uint256) private payments;
 
+  uint256 public platformFee;
+
   modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
     Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];
     if (nft.seller != address(0)) {
@@ -60,6 +62,10 @@ contract NFTMarketplace is ERC165, ReentrancyGuard {
       revert ItemIsNotListedInTheMarketplace();
     }
     _;
+  }
+
+  constructor(uint256 _platformFee) {
+    platformFee = _platformFee;
   }
 
   function addItem(
