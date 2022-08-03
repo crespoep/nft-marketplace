@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -15,6 +16,10 @@ error NoPaymentsAvailableToWithdraw();
 error SellerCannotBuyItsOwnItem();
 
 contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
+
+  bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
+  bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+
   struct Item {
     address seller;
     uint256 price;
@@ -43,6 +48,8 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
     uint256 price,
     address buyer
   );
+
+  event RoyaltyPaid();
 
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
@@ -79,7 +86,7 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
   {
     _checkPriceGreaterThanZero(_itemPrice);
 
-    if (ERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId) == false) {
+    if (ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC721) == false) {
       revert ProvidedAddressDoesNotSupportERC721Interface();
     }
 
@@ -120,6 +127,11 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
 
     _checkBuyerIsNotTheSeller(_item);
     _checkPaymentIsExact(_item);
+
+
+    if (ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC2981) != false) {
+      emit RoyaltyPaid();
+    }
 
     uint256 _feePayment = platformFee * msg.value / 1e2;
     payments[owner()] = _feePayment;

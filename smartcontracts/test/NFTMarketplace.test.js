@@ -156,6 +156,8 @@ describe("NFT marketplace", async () => {
       await marketplaceContract.connect(user1).addItem(
         itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
       )
+
+      await itemMock.mock.safeTransferFrom.returns();
     })
 
     it('should fail if items does not exist', async () => {
@@ -187,7 +189,7 @@ describe("NFT marketplace", async () => {
     it.skip('should transfer ownership to buyer', async () => {});
 
     it('should remove item from the listing after operation is done', async () => {
-      await expect(marketplaceContract.connect(user2).buyItem(
+      expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
       ))
@@ -260,6 +262,24 @@ describe("NFT marketplace", async () => {
       await expect(
         marketplaceContract.connect(user1).withdrawPayments()
       ).to.be.revertedWith("NoPaymentsAvailableToWithdraw()")
+    });
+  })
+
+  describe("royalties payment", async () => {
+    beforeEach(async () => {
+      await marketplaceContract.connect(user1).addItem(
+        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
+      )
+    })
+
+    it('should not be done if item does not implement IERC2189', async () => {
+      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
+      await expect(marketplaceContract.connect(user2).buyItem(
+        itemMock.address,
+        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
+      )).not.to.emit(marketplaceContract, "RoyaltyPaid");
     });
   })
 })
