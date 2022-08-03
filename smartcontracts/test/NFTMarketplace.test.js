@@ -205,6 +205,7 @@ describe("NFT marketplace", async () => {
       )).to.emit(marketplaceContract, "ItemBought")
         .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
     });
+
   })
 
   describe("withdrawal", async () => {
