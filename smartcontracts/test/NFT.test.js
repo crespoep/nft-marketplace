@@ -26,5 +26,10 @@ describe.only("NFT", async () => {
       expect(address).not.to.equal("");
       expect(address).not.to.equal(undefined);
     });
+
+    it('should set the name and symbol correctly', async () => {
+      expect(await nftContract.name()).to.equal("MyNFTs");
+      expect(await nftContract.symbol()).to.equal("MNFT");
+    });
   })
 })

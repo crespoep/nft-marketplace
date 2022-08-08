@@ -4,7 +4,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   await deploy("NFT", {
     from: deployer,
-    args: [],
+    args: [
+      "MyNFTs",
+      "MNFT"
+    ],
     log: true,
   });
 };
