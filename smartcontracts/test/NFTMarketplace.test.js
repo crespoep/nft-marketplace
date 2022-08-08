@@ -3,7 +3,7 @@ const { ethers, deployments } = require("hardhat");
 const { BigNumber } = require("ethers");
 const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 
-const IERC165 = require('../artifacts/contracts/mock/NFT.sol/NFT.json');
+const IERC165 = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 
 describe("NFT marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");

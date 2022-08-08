@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract NFT {
+contract NFTMock {
   function supportsInterface(bytes4 interfaceId) public view returns (bool) {
     return false;
   }
