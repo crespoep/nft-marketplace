@@ -2,10 +2,12 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts/interfaces/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "hardhat/console.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -14,9 +16,10 @@ error ItemIsNotListedInTheMarketplace();
 error PaymentIsNotExact();
 error NoPaymentsAvailableToWithdraw();
 error SellerCannotBuyItsOwnItem();
+error CallerIsNotOwner();
+error OperatorNotApproved();
 
-contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
-
+contract NFTMarketplace is ReentrancyGuard, Ownable {
   bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
   bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
 
@@ -86,8 +89,16 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
   {
     _checkPriceGreaterThanZero(_itemPrice);
 
-    if (ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC721) == false) {
+    if (IERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC721) == false) {
       revert ProvidedAddressDoesNotSupportERC721Interface();
+    }
+
+    IERC721 nft = IERC721(_nftAddress);
+    if (nft.ownerOf(_tokenId) != _msgSender()) {
+      revert CallerIsNotOwner();
+    }
+    if (!nft.isApprovedForAll(_msgSender(), address(this))) {
+      revert OperatorNotApproved();
     }
 
     itemByAddressAndId[_nftAddress][_tokenId] = Item(msg.sender, _itemPrice);
@@ -128,14 +139,23 @@ contract NFTMarketplace is ERC165, ReentrancyGuard, Ownable {
     _checkBuyerIsNotTheSeller(_item);
     _checkPaymentIsExact(_item);
 
+    uint256 _initialPayment = msg.value;
+    uint256 _payment = msg.value;
 
     if (ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC2981) != false) {
-      emit RoyaltyPaid();
+      (address receiver, uint256 royaltyAmount) = IERC2981(_nftAddress).royaltyInfo(_tokenId, _item.price);
+
+      if (royaltyAmount > 0) {
+        payments[receiver] += royaltyAmount;
+        _payment -= royaltyAmount;
+
+        emit RoyaltyPaid();
+      }
     }
 
-    uint256 _feePayment = platformFee * msg.value / 1e2;
+    uint256 _feePayment = platformFee * _initialPayment / 1e2;
     payments[owner()] = _feePayment;
-    payments[_item.seller] += msg.value - _feePayment;
+    payments[_item.seller] += _payment - _feePayment;
 
     IERC721(_nftAddress).safeTransferFrom(
       _item.seller,

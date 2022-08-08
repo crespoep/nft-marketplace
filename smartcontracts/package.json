@@ -10,7 +10,8 @@
     "watch-test": "npx hardhat watch test",
     "lint": "npx eslint . --ext .js",
     "lint-fix": "npx eslint . --ext .js --fix",
-    "prettier": "prettier --write . --ignore-unknown"
+    "prettier": "prettier --write . --ignore-unknown",
+    "build": "waffle"
   },
   "keywords": [],
   "author": "",

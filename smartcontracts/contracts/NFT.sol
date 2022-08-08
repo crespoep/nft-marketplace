@@ -8,4 +8,18 @@ contract NFT {
 
   function safeTransferFrom(address seller, address buyer, uint256 _tokenId) public view {
   }
+
+  function ownerOf(uint256 _tokenId) public view returns (address) {
+    return address(0);
+  }
+
+  function isApprovedForAll(address owner, address operator) public view returns(bool) {
+    return false;
+  }
+
+  function royaltyInfo(uint256 tokenId, uint256 salePrice)
+  external view
+  returns (address receiver, uint256 royaltyAmount) {
+    return (address(0), 0);
+  }
 }

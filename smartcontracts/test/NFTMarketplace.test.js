@@ -8,6 +8,9 @@ const IERC165 = require('../artifacts/contracts/NFT.sol/NFT.json');
 describe("NFT marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
 
+  const IERC2981_ID = "0x2a55205a";
+  const IERC721_ID = "0x80ac58cd";
+
   const FIRST_ITEM_ID = BigNumber.from("1");
   const SECOND_ITEM_ID = BigNumber.from("2");
 
@@ -15,6 +18,7 @@ describe("NFT marketplace", async () => {
     deployer,
     user1,
     user2,
+    user3,
     Marketplace,
     marketplaceContract,
     itemMock
@@ -23,7 +27,7 @@ describe("NFT marketplace", async () => {
   beforeEach(async () => {
     await deployments.fixture(["test"]);
 
-    [deployer, user1, user2] = await ethers.getSigners();
+    [deployer, user1, user2, user3] = await ethers.getSigners();
 
     Marketplace = await deployments.get("NFTMarketplace");
     marketplaceContract = await ethers.getContractAt("NFTMarketplace", Marketplace.address)
@@ -31,6 +35,8 @@ describe("NFT marketplace", async () => {
     itemMock = await deployMockContract(deployer, IERC165.abi);
 
     await itemMock.mock.supportsInterface.returns(true);
+    await itemMock.mock.ownerOf.returns(user1.address)
+    await itemMock.mock.isApprovedForAll.returns(true)
   })
 
   describe("deployment", async () => {
@@ -71,6 +77,20 @@ describe("NFT marketplace", async () => {
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
       ).to.be.revertedWith("ItemAlreadyExistsInTheMarketplace()")
+    });
+
+    it('should fail if caller is not the owner of the item', async () => {
+      await itemMock.mock.ownerOf.returns(user2.address)
+
+      await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWith("CallerIsNotOwner()")
+    });
+
+    it('should fail if marketplace is not approved to manage the item', async () => {
+      await itemMock.mock.isApprovedForAll.returns(false)
+
+      await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWith("OperatorNotApproved()")
     });
 
     it('should add the new item to the listing successfully', async () => {
@@ -189,6 +209,9 @@ describe("NFT marketplace", async () => {
     it.skip('should transfer ownership to buyer', async () => {});
 
     it('should remove item from the listing after operation is done', async () => {
+      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
       expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
@@ -201,6 +224,9 @@ describe("NFT marketplace", async () => {
     });
 
     it('should emit the ItemBought event', async () => {
+      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
       await expect(marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
@@ -238,7 +264,7 @@ describe("NFT marketplace", async () => {
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
       ))
 
-      expect(
+      await expect(
         await marketplaceContract.withdrawPayments()
       ).to.changeEtherBalance(deployer, expectedPayment);
     });
@@ -272,14 +298,46 @@ describe("NFT marketplace", async () => {
       )
     })
 
-    it('should not be done if item does not implement IERC2189', async () => {
-      await itemMock.mock.supportsInterface.returns(false);
+    it('should not be done if item does not implement IERC2981', async () => {
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
       await itemMock.mock.safeTransferFrom.returns();
 
       await expect(marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
       )).not.to.emit(marketplaceContract, "RoyaltyPaid");
+    });
+
+    it('should be done if item implements IERC2189', async () => {
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(true);
+      await itemMock.mock.safeTransferFrom.returns();
+      // user3 will be the considered the token author
+      await itemMock.mock.royaltyInfo.returns(user3.address, ethers.utils.parseEther("0.15"))
+
+      await expect(marketplaceContract.connect(user2).buyItem(
+        itemMock.address,
+        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
+      )).to.emit(marketplaceContract, "RoyaltyPaid");
+
+      await expect(
+        await marketplaceContract.connect(user3).withdrawPayments()
+      ).to.changeEtherBalance(user3, ethers.utils.parseEther("0.15"));
+    });
+
+    it('should not be done if royalties amount is zero', async () => {
+      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+      // user3 will be the considered the token author
+      await itemMock.mock.royaltyInfo.returns(user3.address, ethers.utils.parseEther("0"))
+
+      await expect(await marketplaceContract.connect(user2).buyItem(
+        itemMock.address,
+        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
+      )).not.to.emit(marketplaceContract, "RoyaltyPaid");
+
+      await expect(
+        await marketplaceContract.withdrawPayments()
+      ).to.changeEtherBalance(user3, ethers.utils.parseEther("0"));
     });
   })
 })
