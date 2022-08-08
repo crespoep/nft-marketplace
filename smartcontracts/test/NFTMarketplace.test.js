@@ -3,7 +3,7 @@ const { ethers, deployments } = require("hardhat");
 const { BigNumber } = require("ethers");
 const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 
-const IERC165 = require('../artifacts/contracts/NFT.sol/NFT.json');
+const IERC165 = require('../artifacts/contracts/mock/NFT.sol/NFT.json');
 
 describe("NFT marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
@@ -34,7 +34,7 @@ describe("NFT marketplace", async () => {
 
     itemMock = await deployMockContract(deployer, IERC165.abi);
 
-    await itemMock.mock.supportsInterface.returns(true);
+    await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(true);
     await itemMock.mock.ownerOf.returns(user1.address)
     await itemMock.mock.isApprovedForAll.returns(true)
   })
@@ -65,7 +65,7 @@ describe("NFT marketplace", async () => {
     });
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
-      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(false);
 
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
@@ -206,11 +206,8 @@ describe("NFT marketplace", async () => {
       )).to.be.revertedWith("PaymentIsNotExact()")
     });
 
-    it.skip('should transfer ownership to buyer', async () => {});
-
     it('should remove item from the listing after operation is done', async () => {
-      await itemMock.mock.supportsInterface.returns(false);
-      await itemMock.mock.safeTransferFrom.returns();
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
 
       expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
@@ -224,7 +221,7 @@ describe("NFT marketplace", async () => {
     });
 
     it('should emit the ItemBought event', async () => {
-      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
       await itemMock.mock.safeTransferFrom.returns();
 
       await expect(marketplaceContract.connect(user2).buyItem(
@@ -325,7 +322,7 @@ describe("NFT marketplace", async () => {
     });
 
     it('should not be done if royalties amount is zero', async () => {
-      await itemMock.mock.supportsInterface.returns(false);
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
       await itemMock.mock.safeTransferFrom.returns();
       // user3 will be the considered the token author
       await itemMock.mock.royaltyInfo.returns(user3.address, ethers.utils.parseEther("0"))
