@@ -43,10 +43,23 @@ describe.only("NFT", async () => {
   })
 
   describe('minting', async () => {
+    let tokenURI;
+
+    beforeEach(() => {
+      tokenURI = 'my_nft';
+    })
+
     it('should fail if max amount of nfts has been reached', async () => {
-      await expect(nftContract.mint(user1.address)).not.to.be.reverted;
-      await expect(nftContract.mint(user1.address)).not.to.be.reverted;
-      await expect(nftContract.mint(user1.address)).to.be.reverted;
+      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be.reverted;
+      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be.reverted;
+      await expect(nftContract.mint(user1.address, tokenURI)).to.be.reverted;
+    });
+
+    it('should set the tokenURI correctly', async () => {
+      await nftContract.mint(user1.address, tokenURI)
+      const tokenId = 0;
+
+      expect(await nftContract.tokenURI(tokenId)).to.equal(tokenURI)
     });
   })
 

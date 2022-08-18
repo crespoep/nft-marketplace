@@ -7,7 +7,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     args: [
       "MyNFTs",
       "MNFT",
-      10
+      1000
     ],
     log: true,
   });
