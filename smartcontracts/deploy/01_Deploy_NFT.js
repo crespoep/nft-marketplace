@@ -6,10 +6,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     from: deployer,
     args: [
       "MyNFTs",
-      "MNFT"
+      "MNFT",
+      10
     ],
     log: true,
   });
 };
 
-module.exports.tags = ["all", "test"];
+module.exports.tags = ["all"];
