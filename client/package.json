@@ -13,6 +13,7 @@
     "formidable": "^2.0.1",
     "formidable-serverless": "^1.1.1",
     "ipfs-http-client": "^57.0.3",
+    "mongodb": "^4.9.0",
     "next": "12.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"

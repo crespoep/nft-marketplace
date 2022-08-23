@@ -6,7 +6,7 @@ const createIpfsUrl = async file => {
 
     const added = await client.add(file)
 
-    return `${process.env.IPFS_GATEWAY}${added.path}`;
+    return added.path;
   } catch(e) {
     console.log("Error: ", e)
   }

@@ -6,9 +6,8 @@ import {useEffect} from "react";
 export default function About() {
   useEffect(() => {
     const func = async () => {
-      const et = await fetch('/api/hello')
+      const et = await fetch('/api/nfts')
       console.log(await et.json())
-
     }
   func()
   }, [])

@@ -26,9 +26,10 @@ const CreateNFTForm = () => {
 
     const data = {...formInput}
     data.price = ethers.utils.parseUnits(formInput.price, "ether")
-console.log(data)
+
     const result = await createMetadataInIPFS(data)
     console.log(result)
+    const res = await fetch('/api/nft/create')
   }
 
   return (
