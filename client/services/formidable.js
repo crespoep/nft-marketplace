@@ -14,9 +14,9 @@ const bodyParser = async req => {
   })
 
   const data = body.fields;
-console.log(body)
-  const filepath = body?.files?.file?.path;
-console.log(filepath)
+
+  const filepath = body?.files?.image?.path;
+
   const file = (typeof filepath !== 'undefined') ? fs.readFileSync(filepath) : null;
 
   return { data, file }

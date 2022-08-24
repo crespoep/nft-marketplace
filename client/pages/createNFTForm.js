@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { createImageInIPFS, createMetadataInIPFS } from "../services/api";
 import { ethers } from "ethers"
 
 const CreateNFTForm = () => {
-
   const [ formInput, updateFormInput ] = useState({
     image: null,
     name: "",
@@ -12,24 +10,30 @@ const CreateNFTForm = () => {
 
   const onFileChange = async e => {
     const file = e.target.files[0];
-    const result = await createImageInIPFS(file)
-
-    updateFormInput({ ...formInput, image: result.image })
+    updateFormInput({ ...formInput, image: file })
   }
 
   const handleSubmit = async e => {
     e.preventDefault()
 
-    if (!formInput.name || !Number(formInput.price)) {
+    // improve validations
+    if (!formInput.name || !Number(formInput.price) || !formInput.image) {
       return;
     }
 
     const data = {...formInput}
     data.price = ethers.utils.parseUnits(formInput.price, "ether")
 
-    const result = await createMetadataInIPFS(data)
-    console.log(result)
-    const res = await fetch('/api/nft/create')
+    const body = new FormData();
+    body.append("name", formInput.name)
+    body.append("price", formInput.price)
+    body.append("image", formInput.image)
+
+    const res = await fetch('/api/nft/create', {
+      method: "POST",
+      body: body
+    })
+    console.log(res)
   }
 
   return (
