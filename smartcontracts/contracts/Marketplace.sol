@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/interfaces/IERC165.sol";
@@ -7,6 +8,10 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "./ISalesOrderChecker.sol";
+import "./SalesOrderChecker.sol";
+import "./IMarketplaceNFT.sol";
+import "hardhat/console.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -18,13 +23,25 @@ error SellerCannotBuyItsOwnItem();
 error CallerIsNotOwner();
 error OperatorNotApproved();
 
-contract NFTMarketplace is ReentrancyGuard, Ownable {
+contract Marketplace is ReentrancyGuard, Ownable {
   bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
   bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+
+  SalesOrderChecker checker;
 
   struct Item {
     address seller;
     uint256 price;
+  }
+
+  struct SalesOrder {
+    address contractAddress;
+    uint256 tokenId;
+    address tokenOwner;
+    uint256 price;
+    string tokenURI;
+    uint256 nonce;
+    bytes signature;
   }
 
   event ItemAdded(
@@ -53,6 +70,10 @@ contract NFTMarketplace is ReentrancyGuard, Ownable {
 
   event RoyaltyPaid();
 
+  event Minted(
+    address minter
+  );
+
   mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
   mapping(address => uint256) private payments;
@@ -74,8 +95,16 @@ contract NFTMarketplace is ReentrancyGuard, Ownable {
     _;
   }
 
-  constructor(uint256 _platformFee) {
+  constructor(uint256 _platformFee, address _salesOrderChecker) {
     platformFee = _platformFee;
+    checker = SalesOrderChecker(_salesOrderChecker);
+  }
+
+  function redeem(SalesOrder calldata _salesOrder) public {
+    address _user = checker.verify(_salesOrder);
+    IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
+    nft.mint(_user, _salesOrder.tokenURI);
+    emit Minted(_user);
   }
 
   function addItem(

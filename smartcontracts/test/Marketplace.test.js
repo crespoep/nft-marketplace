@@ -1,11 +1,12 @@
 const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
+const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
 const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 
 const IERC165 = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
+const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
-describe.only("NFT marketplace", async () => {
+describe("Marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
 
   const IERC2981_ID = "0x2a55205a";
@@ -21,22 +22,51 @@ describe.only("NFT marketplace", async () => {
     user3,
     Marketplace,
     marketplaceContract,
-    itemMock
+    itemMock,
+    salesOrderCheckerMock
   ;
 
   beforeEach(async () => {
-    await deployments.fixture(["test"]);
-
     [deployer, user1, user2, user3] = await ethers.getSigners();
 
-    Marketplace = await deployments.get("NFTMarketplace");
-    marketplaceContract = await ethers.getContractAt("NFTMarketplace", Marketplace.address)
-
     itemMock = await deployMockContract(deployer, IERC165.abi);
+    salesOrderCheckerMock = await deployMockContract(deployer, SalesOrderCheckerMock.abi);
+
+    Marketplace = await ethers.getContractFactory("Marketplace");
+    marketplaceContract = await Marketplace.deploy(
+      BigNumber.from(3),
+      salesOrderCheckerMock.address
+    );
 
     await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(true);
-    await itemMock.mock.ownerOf.returns(user1.address)
-    await itemMock.mock.isApprovedForAll.returns(true)
+    await itemMock.mock.ownerOf.returns(user1.address);
+    await itemMock.mock.isApprovedForAll.returns(true);
+  })
+
+  describe('redeem', async () => {
+    let salesOrder;
+
+    beforeEach(async () => {
+      salesOrder = {
+        contractAddress: itemMock.address,
+        tokenId: 1,
+        tokenOwner: user1.address,
+        price: ethers.utils.parseEther("1"),
+        tokenURI: "https://example.uri/ipfs/Qmef",
+        nonce: 1,
+        // This is an example signature made with signer._signTypedData method
+        signature: "0x484780e03f598b91214366ff195095643a939be58f9cf2adcba21b135b1c"
+      }
+    })
+
+    it('should fail if not signature', async () => {
+      await salesOrderCheckerMock.mock.verify.returns(user1.address);
+      await itemMock.mock.mint.returns()
+
+      await expect(
+        marketplaceContract.redeem(salesOrder)
+      ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
+    });
   })
 
   describe("deployment", async () => {

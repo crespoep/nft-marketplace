@@ -6,6 +6,10 @@ contract NFTMock {
     return false;
   }
 
+  function mint(address _user, string memory tokenURI) public {
+
+  }
+
   function safeTransferFrom(address seller, address buyer, uint256 _tokenId) public view {
   }
 

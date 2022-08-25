@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "./IMarketplaceNFT.sol";
 
-contract NFT is ERC721Enumerable, ERC721URIStorage{
+contract NFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage{
   uint256 private immutable MAX_NFTS;
   uint256 private nftAmount;
 

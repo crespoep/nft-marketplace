@@ -15,7 +15,7 @@ const createSalesOrder = async nftItem => {
   const nonce = 1;
 
   const { domain, types, salesOrder: _salesOrder } = await buildSalesOrder(marketplaceContractAddress, nftItem, tokenOwner, chainId, nonce);
-console.log(domain, types, _salesOrder)
+
   const signature = await signer._signTypedData(domain, types, _salesOrder);
 
   const salesOrder = {..._salesOrder, signature};

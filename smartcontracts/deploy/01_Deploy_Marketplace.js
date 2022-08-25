@@ -1,9 +1,10 @@
 const {BigNumber} = require("ethers");
+
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("NFTMarketplace", {
+  await deploy("Marketplace", {
     from: deployer,
     args: [
       BigNumber.from(3)
