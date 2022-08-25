@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const {ethers, deployments} = require("hardhat");
 const deploy = deployments.deploy;
 
-describe.only("NFT", async () => {
+describe("NFT", async () => {
   let
     deployer,
     user1,

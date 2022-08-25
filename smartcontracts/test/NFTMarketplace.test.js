@@ -5,7 +5,7 @@ const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 
 const IERC165 = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 
-describe("NFT marketplace", async () => {
+describe.only("NFT marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
 
   const IERC2981_ID = "0x2a55205a";
