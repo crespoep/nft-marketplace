@@ -107,7 +107,7 @@ contract Marketplace is ReentrancyGuard, Ownable {
     IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
     nft.mint(_user, _salesOrder.tokenURI);
 
-    nft.safeTransfer(_user, _redeemer, _salesOrder.tokenId);
+    IERC721(_salesOrder.contractAddress).safeTransferFrom(_user, _redeemer, _salesOrder.tokenId);
 
     emit Minted(_user);
   }

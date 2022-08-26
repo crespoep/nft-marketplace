@@ -43,7 +43,7 @@ describe("Marketplace", async () => {
     await itemMock.mock.isApprovedForAll.returns(true);
   })
 
-  describe.only('redeem', async () => {
+  describe('redeem', async () => {
     let salesOrder;
 
     beforeEach(async () => {
@@ -62,7 +62,7 @@ describe("Marketplace", async () => {
     it('should fail if signer does not have minter role', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.reverts();
-      await itemMock.mock.safeTransfer.returns();
+      await itemMock.mock.safeTransferFrom.returns();
 
       await expect(
         marketplaceContract.redeem(user2.address, salesOrder)
@@ -72,7 +72,7 @@ describe("Marketplace", async () => {
     it('should mint a new item to the signer account', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.returns();
-      await itemMock.mock.safeTransfer.returns();
+      await itemMock.mock.safeTransferFrom.returns();
 
       await expect(
         marketplaceContract.redeem(user2.address, salesOrder)
@@ -258,6 +258,7 @@ describe("Marketplace", async () => {
 
     it('should remove item from the listing after operation is done', async () => {
       await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
 
       expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
