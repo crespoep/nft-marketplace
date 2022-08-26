@@ -22,6 +22,7 @@ error NoPaymentsAvailableToWithdraw();
 error SellerCannotBuyItsOwnItem();
 error CallerIsNotOwner();
 error OperatorNotApproved();
+error UserDoesNotHaveMinterRole();
 
 contract Marketplace is ReentrancyGuard, Ownable {
   bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
@@ -100,10 +101,14 @@ contract Marketplace is ReentrancyGuard, Ownable {
     checker = SalesOrderChecker(_salesOrderChecker);
   }
 
-  function redeem(SalesOrder calldata _salesOrder) public {
+  function redeem(address _redeemer, SalesOrder calldata _salesOrder) public {
     address _user = checker.verify(_salesOrder);
+
     IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
     nft.mint(_user, _salesOrder.tokenURI);
+
+    nft.safeTransfer(_user, _redeemer, _salesOrder.tokenId);
+
     emit Minted(_user);
   }
 

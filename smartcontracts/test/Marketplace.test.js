@@ -43,7 +43,7 @@ describe("Marketplace", async () => {
     await itemMock.mock.isApprovedForAll.returns(true);
   })
 
-  describe('redeem', async () => {
+  describe.only('redeem', async () => {
     let salesOrder;
 
     beforeEach(async () => {
@@ -59,13 +59,33 @@ describe("Marketplace", async () => {
       }
     })
 
-    it('should mint a new item to the signer account', async () => {
+    it('should fail if signer does not have minter role', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
-      await itemMock.mock.mint.returns()
+      await itemMock.mock.mint.reverts();
+      await itemMock.mock.safeTransfer.returns();
 
       await expect(
-        marketplaceContract.redeem(salesOrder)
+        marketplaceContract.redeem(user2.address, salesOrder)
+      ).to.be.reverted
+    });
+
+    it('should mint a new item to the signer account', async () => {
+      await salesOrderCheckerMock.mock.verify.returns(user1.address);
+      await itemMock.mock.mint.returns();
+      await itemMock.mock.safeTransfer.returns();
+
+      await expect(
+        marketplaceContract.redeem(user2.address, salesOrder)
       ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
+    });
+
+    // It would be better to have an method like toHaveBeenCalled in safeTransferFrom from NFT contract
+    it.skip('should transfer the new minted item to the buyer', async () => {
+      await salesOrderCheckerMock.mock.verify.returns(user1.address);
+      await itemMock.mock.mint.returns()
+      await itemMock.mock.safeTransfer.returns()
+
+      await marketplaceContract.redeem(user2.address, salesOrder)
     });
   })
 
