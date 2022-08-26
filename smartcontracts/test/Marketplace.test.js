@@ -59,7 +59,7 @@ describe("Marketplace", async () => {
       }
     })
 
-    it('should fail if not signature', async () => {
+    it('should mint a new item to the signer account', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.returns()
 
