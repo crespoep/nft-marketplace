@@ -2,16 +2,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const MarketplaceNFT = await deploy("MarketplaceNFT", {
+  const salesOrderCheckerContract = await deploy("SalesOrderChecker", {
     from: deployer,
-    args: [
-      "MyNFTs",
-      "MNFT",
-      1000
-    ],
+    args: [],
     log: true,
   });
-  console.log("MarketplaceNFT contract: ", MarketplaceNFT.address)
+
+  console.log("SalesOrderChecker contract: ", salesOrderCheckerContract.address)
 };
 
 module.exports.tags = ["all", "test"];

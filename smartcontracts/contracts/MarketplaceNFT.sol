@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./IMarketplaceNFT.sol";
 
-contract NFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, AccessControl {
+contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, AccessControl {
   bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
   uint256 private immutable MAX_NFTS;

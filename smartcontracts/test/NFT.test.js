@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const {ethers, deployments} = require("hardhat");
 const deploy = deployments.deploy;
 
-describe("NFT", async () => {
+describe("Marketplace NFT", async () => {
   let
     deployer,
     user1,
@@ -13,7 +13,7 @@ describe("NFT", async () => {
   beforeEach(async () => {
     [deployer, user1] = await ethers.getSigners();
 
-    NFT = await ethers.getContractFactory("NFT");
+    NFT = await ethers.getContractFactory("MarketplaceNFT");
     nftContract = await NFT.deploy(
       "MyNFTs",
       "MNFT",

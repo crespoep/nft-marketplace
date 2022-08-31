@@ -5,6 +5,7 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/interfaces/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
@@ -41,7 +42,6 @@ contract Marketplace is ReentrancyGuard, Ownable {
     address tokenOwner;
     uint256 price;
     string tokenURI;
-    uint256 nonce;
     bytes signature;
   }
 

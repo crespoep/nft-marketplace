@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
 const { deployMockContract } = require('@ethereum-waffle/mock-contract');
 
-const IERC165 = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
+const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
 describe("Marketplace", async () => {
@@ -29,7 +29,7 @@ describe("Marketplace", async () => {
   beforeEach(async () => {
     [deployer, user1, user2, user3] = await ethers.getSigners();
 
-    itemMock = await deployMockContract(deployer, IERC165.abi);
+    itemMock = await deployMockContract(deployer, ItemMock.abi);
     salesOrderCheckerMock = await deployMockContract(deployer, SalesOrderCheckerMock.abi);
 
     Marketplace = await ethers.getContractFactory("Marketplace");
@@ -79,11 +79,11 @@ describe("Marketplace", async () => {
       ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
     });
 
-    // It would be better to have an method like toHaveBeenCalled in safeTransferFrom from NFT contract
+    // It would be better to have a method like toHaveBeenCalled in safeTransferFrom to check the transfer
     it.skip('should transfer the new minted item to the buyer', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.returns()
-      await itemMock.mock.safeTransfer.returns()
+      await itemMock.mock.safeTransferFrom.returns()
 
       await marketplaceContract.redeem(user2.address, salesOrder)
     });
