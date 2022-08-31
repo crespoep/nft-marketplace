@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "deploy:local": "npx hardhat deploy",
-    "deploy:testnet": "npx hardhat deploy --network kovan",
+    "deploy:testnet": "hardhat deploy --network kovan",
     "test": "npx hardhat test",
     "watch-test": "npx hardhat watch test",
     "lint": "npx eslint . --ext .js",
     "lint-fix": "npx eslint . --ext .js --fix",
-    "prettier": "prettier --write . --ignore-unknown",
-    "build": "waffle"
+    "solhint": "solhint 'contracts/**/*.sol'",
+    "prettier": "prettier --write 'contracts/**/*.sol'"
   },
   "keywords": [],
   "author": "",
@@ -22,22 +22,18 @@
     "hardhat": "^2.9.9"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
+    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
-    "@nomiclabs/hardhat-waffle": "^2.0.3",
     "chai": "^4.3.6",
     "dotenv": "^16.0.1",
-    "eslint": "^8.17.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "ethereum-waffle": "^3.4.4",
     "hardhat-deploy": "^0.11.10",
-    "hardhat-watcher": "^2.3.0",
-    "prettier": "2.6.2"
-  },
-  "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown"
+    "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-watcher": "^2.5.0",
+    "prettier": "2.6.2",
+    "prettier-plugin-solidity": "^1.0.0-beta.24",
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.7.21"
   }
 }
