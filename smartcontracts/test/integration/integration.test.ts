@@ -1,6 +1,8 @@
-const { expect } = require("chai");
-const { ethers, deployments, getChainId } = require("hardhat");
-const { BigNumber } = require("ethers");
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Marketplace, MarketplaceNFT, SalesOrderChecker } from '../../typechain-types'
+import { BigNumber } from "ethers";
+import { expect } from "chai";
+import { ethers, deployments, getChainId } from "hardhat";
 
 describe("Marketplace", async () => {
   const ONE_ETHER = ethers.utils.parseEther("1");
@@ -9,16 +11,16 @@ describe("Marketplace", async () => {
   const SECOND_ITEM_ID = BigNumber.from("2");
 
   let
-    deployer,
-    user1,
-    user2,
-    user3,
+    deployer: SignerWithAddress,
+    user1: SignerWithAddress,
+    user2: SignerWithAddress,
+    user3: SignerWithAddress,
     Marketplace,
-    marketplace,
     NFT,
-    nft,
     SalesOrder,
-    salesOrderContract
+    marketplace: Marketplace,
+    nft: MarketplaceNFT,
+    salesOrderContract: SalesOrderChecker
   ;
 
   beforeEach(async () => {
@@ -58,7 +60,8 @@ describe("Marketplace", async () => {
       tokenId: BigNumber.from(0),
       tokenOwner: user1.address,
       price: ONE_ETHER,
-      tokenURI: "https://example.uri/ipfs/Qmef"
+      tokenURI: "https://example.uri/ipfs/Qmef",
+      signature: ""
     }
 
     const signature = await user1._signTypedData(domain, types, salesOrder);

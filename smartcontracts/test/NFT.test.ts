@@ -1,13 +1,14 @@
-const { expect } = require("chai");
-const {ethers, deployments} = require("hardhat");
-const deploy = deployments.deploy;
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { MarketplaceNFT } from '../typechain-types'
+import { expect } from "chai";
+import { ethers } from "hardhat";
 
 describe("Marketplace NFT", async () => {
   let
-    deployer,
-    user1,
+    deployer: SignerWithAddress,
+    user1: SignerWithAddress,
     NFT,
-    nftContract
+    nftContract: MarketplaceNFT
   ;
 
   beforeEach(async () => {
@@ -52,7 +53,7 @@ describe("Marketplace NFT", async () => {
   })
 
   describe('minting', async () => {
-    let tokenURI;
+    let tokenURI: string;
 
     beforeEach(() => {
       tokenURI = 'my_nft';

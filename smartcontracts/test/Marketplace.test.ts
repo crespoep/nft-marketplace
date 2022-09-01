@@ -1,16 +1,13 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Marketplace } from '../typechain-types'
 import { deployMockContract, MockContract } from "@ethereum-waffle/mock-contract";
-import { Contract } from "ethers";
-
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { BigNumber } = require("ethers");
-
-
+import { BigNumber } from "ethers";
+import { expect } from "chai";
+import { ethers } from "hardhat";
 const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
-describe.only("Marketplace", async () => {
+describe("Marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
 
   const IERC2981_ID = "0x2a55205a";
@@ -25,7 +22,7 @@ describe.only("Marketplace", async () => {
     user2: SignerWithAddress,
     user3: SignerWithAddress,
     Marketplace,
-    marketplaceContract: Contract,
+    marketplaceContract: Marketplace,
     itemMock: MockContract,
     salesOrderCheckerMock: MockContract
   ;
