@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers, deployments, getChainId } = require("hardhat");
 const { BigNumber } = require("ethers");
 
-describe.only("Marketplace", async () => {
+describe("Marketplace", async () => {
   const ONE_ETHER = ethers.utils.parseEther("1");
 
   const FIRST_ITEM_ID = BigNumber.from("1");

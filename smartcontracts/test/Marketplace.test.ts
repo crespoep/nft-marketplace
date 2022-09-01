@@ -1,12 +1,16 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
+import { deployMockContract, MockContract } from "@ethereum-waffle/mock-contract";
+import { Contract } from "ethers";
+
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
-const { deployMockContract } = require('@ethereum-waffle/mock-contract');
+
 
 const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
-describe("Marketplace", async () => {
+describe.only("Marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
 
   const IERC2981_ID = "0x2a55205a";
@@ -16,14 +20,14 @@ describe("Marketplace", async () => {
   const SECOND_ITEM_ID = BigNumber.from("2");
 
   let
-    deployer,
-    user1,
-    user2,
-    user3,
+    deployer: SignerWithAddress,
+    user1: SignerWithAddress,
+    user2: SignerWithAddress,
+    user3: SignerWithAddress,
     Marketplace,
-    marketplaceContract,
-    itemMock,
-    salesOrderCheckerMock
+    marketplaceContract: Contract,
+    itemMock: MockContract,
+    salesOrderCheckerMock: MockContract
   ;
 
   beforeEach(async () => {
@@ -44,7 +48,7 @@ describe("Marketplace", async () => {
   })
 
   describe('redeem', async () => {
-    let salesOrder;
+    let salesOrder: any;
 
     beforeEach(async () => {
       salesOrder = {
@@ -314,7 +318,7 @@ describe("Marketplace", async () => {
 
       await expect(
         await marketplaceContract.withdrawPayments()
-      ).to.changeEtherBalance(deployer, expectedPayment);
+      ).to.changeEtherBalance(deployer, ITEM_PRICE_EXAMPLE);
     });
 
     it('should fail if trying to withdraw twice in a row', async () => {
