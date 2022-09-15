@@ -1,4 +1,4 @@
-import {ethers} from 'ethers'
+import {ethers, BigNumber} from 'ethers'
 
 const connect = async () => {
   const connection = await getConnection();
@@ -34,6 +34,18 @@ const getConnection = async () => {
   return ethereum;
 }
 
+const getBalance = async (account) => {
+  const connection = await getConnection();
+
+  const hexEthBalance = await connection.request({
+    method: "eth_getBalance",
+    params: [account, "latest"]
+  })
+
+  const ethBalance = ethers.utils.formatEther(BigNumber.from(hexEthBalance));
+  return (+ethBalance).toFixed(4);
+}
+
 const initContract = async (contractAddress, abi) => {
   const { signer, signerAddress, chainId } = await connect();
 
@@ -45,5 +57,6 @@ const initContract = async (contractAddress, abi) => {
 export {
   getActiveAddress,
   initContract,
-  connect
+  connect,
+  getBalance
 }

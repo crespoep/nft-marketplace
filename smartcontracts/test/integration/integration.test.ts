@@ -6,9 +6,7 @@ import { ethers, deployments, getChainId } from "hardhat";
 
 describe("Marketplace", async () => {
   const ONE_ETHER = ethers.utils.parseEther("1");
-
-  const FIRST_ITEM_ID = BigNumber.from("1");
-  const SECOND_ITEM_ID = BigNumber.from("2");
+  const FIRST_ITEM_ID = BigNumber.from("0");
 
   let
     deployer: SignerWithAddress,
@@ -57,7 +55,7 @@ describe("Marketplace", async () => {
 
     let salesOrder = {
       contractAddress: nft.address,
-      tokenId: BigNumber.from(0),
+      tokenId: FIRST_ITEM_ID,
       tokenOwner: user1.address,
       price: ONE_ETHER,
       tokenURI: "https://example.uri/ipfs/Qmef",
@@ -74,7 +72,7 @@ describe("Marketplace", async () => {
 
     await marketplace.redeem(user2.address, salesOrder);
 
-    const owner = await nft.ownerOf(0);
+    const owner = await nft.ownerOf(FIRST_ITEM_ID);
     expect(owner).to.equal(user2.address)
   });
 })
