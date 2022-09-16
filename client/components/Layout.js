@@ -16,10 +16,10 @@ export default function Layout({ children }) {
         <title>NFT marketplace</title>
       </Head>
       <Header account={account} setAccount={setAccount} balance={balance} setBalance={setBalance} />
-      <main className={styles.container}>{children}</main>
-      <footer className={styles.footer}>
+      <main className="">{children}</main>
+      <footer className="">
         Powered by{' '}
-        <span className={styles.logo}>
+        <span className="">
           <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
         </span>
       </footer>

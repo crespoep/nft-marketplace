@@ -282,8 +282,9 @@ describe("Marketplace", async () => {
       )).to.emit(marketplaceContract, "ItemBought")
         .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
     });
-
   })
+  
+  
 
   describe("withdrawal", async () => {
     const platformFee = await marketplaceContract.platformFee();

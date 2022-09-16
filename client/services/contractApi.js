@@ -1,6 +1,11 @@
 import { getContract } from "./ethereumConnectionManager";
 import { ethers } from "ethers";
 
+const getLastCreated = async () => {
+  const { contract } = await getContract();
+  return [];
+}
+
 // const createSalesOrder = async () => {
 //
 // }
@@ -39,4 +44,5 @@ export {
   // getOpenLotteries,
   // getParticipationsByUser,
   // participate
+  getLastCreated
 }
