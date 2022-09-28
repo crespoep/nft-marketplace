@@ -2,15 +2,13 @@
 pragma solidity ^0.8.7;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import "./ISalesOrderChecker.sol";
-import "./SalesOrderChecker.sol";
+import { SalesOrderChecker } from "./SalesOrderChecker.sol";
 import "./IMarketplaceNFT.sol";
 import "hardhat/console.sol";
 
