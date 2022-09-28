@@ -4,6 +4,7 @@ import { deployMockContract, MockContract } from "@ethereum-waffle/mock-contract
 import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import {createSalesOrder} from "./helpers/EIP712";
 const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
 const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
@@ -48,18 +49,17 @@ describe("Marketplace", async () => {
     let salesOrder: any;
 
     beforeEach(async () => {
-      salesOrder = {
-        contractAddress: itemMock.address,
-        tokenId: 1,
-        tokenOwner: user1.address,
-        price: ethers.utils.parseEther("1"),
-        tokenURI: "https://example.uri/ipfs/Qmef",
-        nonce: 1,
-        // This is an example signature made with signer._signTypedData method
-        signature: "0x484780e03f598b91214366ff195095643a939be58f9cf2adcba21b135b1c"
-      }
+      salesOrder = await createSalesOrder(
+        marketplaceContract.address,
+        itemMock.address,
+        1,
+        ITEM_PRICE_EXAMPLE,
+        "https://example.uri/ipfs/Qmef",
+        31337,
+        user1
+      );
     })
-
+    
     it('should fail if signer does not have minter role', async () => {
       await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.reverts();
@@ -69,12 +69,11 @@ describe("Marketplace", async () => {
         marketplaceContract.redeem(user2.address, salesOrder)
       ).to.be.reverted
     });
-
+  
     it('should mint a new item to the signer account', async () => {
-      await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.returns();
       await itemMock.mock.safeTransferFrom.returns();
-
+    
       await expect(
         marketplaceContract.redeem(user2.address, salesOrder)
       ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)

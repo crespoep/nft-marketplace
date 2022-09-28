@@ -13,7 +13,7 @@ contract SalesOrderChecker is EIP712 {
 
   constructor() EIP712("LAZY_MARKETPLACE", "1") {}
 
-  function verify(Marketplace.SalesOrder calldata _salesOrder) external view returns(address) {
+  function verify(Marketplace.SalesOrder calldata _salesOrder) internal view returns(address) {
     bytes32 digest = _hash(_salesOrder);
     return ECDSA.recover(digest, _salesOrder.signature);
   }

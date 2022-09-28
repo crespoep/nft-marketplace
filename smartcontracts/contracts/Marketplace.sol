@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
-pragma abicoder v2;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -23,11 +22,9 @@ error CallerIsNotOwner();
 error OperatorNotApproved();
 error UserDoesNotHaveMinterRole();
 
-contract Marketplace is ReentrancyGuard, Ownable {
+contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
   bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
   bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
-
-  SalesOrderChecker checker;
 
   struct Item {
     address seller;
@@ -96,11 +93,10 @@ contract Marketplace is ReentrancyGuard, Ownable {
 
   constructor(uint256 _platformFee, address _salesOrderChecker) {
     platformFee = _platformFee;
-    checker = SalesOrderChecker(_salesOrderChecker);
   }
 
   function redeem(address _redeemer, SalesOrder calldata _salesOrder) public {
-    address _user = checker.verify(_salesOrder);
+    address _user = verify(_salesOrder);
 
     IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
     nft.mint(_user, _salesOrder.tokenURI);
