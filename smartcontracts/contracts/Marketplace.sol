@@ -146,7 +146,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
   function buyItem(
     address _nftAddress,
     uint256 _tokenId
-  ) payable external
+  ) external payable
     itemListed(_nftAddress, _tokenId)
     nonReentrant
   {
@@ -193,7 +193,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     payments[msg.sender] = 0;
 
     (bool success, ) = payable(msg.sender).call{ value: _payment}("");
-    require(success);
+    require(success, "Transfer failed");
   }
 
   function _checkBuyerIsNotTheSeller(Item memory _item) private view {

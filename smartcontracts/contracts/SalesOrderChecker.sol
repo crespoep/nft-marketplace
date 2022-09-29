@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { EIP712, ECDSA } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract SalesOrderChecker is EIP712 {
+contract SalesOrderChecker is EIP712("LAZY_MARKETPLACE", "1") {
   struct SalesOrder {
     address contractAddress;
     uint256 tokenId;
@@ -13,11 +13,9 @@ contract SalesOrderChecker is EIP712 {
     bytes signature;
   }
 
-  bytes32 constant SALES_ORDER_TYPEHASH = keccak256(
+  bytes32 private constant SALES_ORDER_TYPEHASH = keccak256(
     "SalesOrder(address contractAddress,uint256 tokenId,address tokenOwner,uint256 price,string tokenURI)"
   );
-
-  constructor() EIP712("LAZY_MARKETPLACE", "1") {}
 
   function verify(SalesOrder calldata _salesOrder) internal view returns(address) {
     bytes32 digest = _hash(_salesOrder);

@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy:local": "npx hardhat deploy",
+    "deploy:local": "hardhat deploy",
     "deploy:testnet": "hardhat deploy --network kovan",
-    "test": "npx hardhat test",
-    "watch-test": "npx hardhat watch test",
+    "test": "hardhat test",
+    "watch-test": "hardhat watch test",
     "lint": "npx eslint . --ext .js",
     "lint-fix": "npx eslint . --ext .js --fix",
     "solhint": "solhint 'contracts/**/*.sol'",
