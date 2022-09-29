@@ -31,15 +31,6 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     uint256 price;
   }
 
-  struct SalesOrder {
-    address contractAddress;
-    uint256 tokenId;
-    address tokenOwner;
-    uint256 price;
-    string tokenURI;
-    bytes signature;
-  }
-
   event ItemAdded(
     address seller,
     address nftAddress,
