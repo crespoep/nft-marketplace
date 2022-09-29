@@ -1,4 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+// @ts-ignore
 import { Marketplace } from '../typechain-types'
 import { deployMockContract, MockContract } from "@ethereum-waffle/mock-contract";
 import { BigNumber } from "ethers";
