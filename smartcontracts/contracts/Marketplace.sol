@@ -91,7 +91,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     _;
   }
 
-  constructor(uint256 _platformFee, address _salesOrderChecker) {
+  constructor(uint256 _platformFee) {
     platformFee = _platformFee;
   }
 

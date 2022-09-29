@@ -34,8 +34,6 @@ const buildSalesOrder = async (
     verifyingContract: marketplaceAddress,
     chainId: chainId
   }
-  console.log("Verifying contract: ", marketplaceAddress)
-  console.log("contractAddress: ", nftContractAddress)
 
   const types = {
     SalesOrder: [

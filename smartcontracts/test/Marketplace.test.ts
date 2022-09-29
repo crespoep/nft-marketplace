@@ -6,7 +6,6 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import {createSalesOrder} from "./helpers/EIP712";
 const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
-const SalesOrderCheckerMock = require('../artifacts/contracts/SalesOrderChecker.sol/SalesOrderChecker.json');
 
 describe("Marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
@@ -24,20 +23,17 @@ describe("Marketplace", async () => {
     user3: SignerWithAddress,
     Marketplace,
     marketplaceContract: Marketplace,
-    itemMock: MockContract,
-    salesOrderCheckerMock: MockContract
+    itemMock: MockContract
   ;
 
   beforeEach(async () => {
     [deployer, user1, user2, user3] = await ethers.getSigners();
 
     itemMock = await deployMockContract(deployer, ItemMock.abi);
-    salesOrderCheckerMock = await deployMockContract(deployer, SalesOrderCheckerMock.abi);
 
     Marketplace = await ethers.getContractFactory("Marketplace");
     marketplaceContract = await Marketplace.deploy(
-      BigNumber.from(3),
-      salesOrderCheckerMock.address
+      BigNumber.from(3)
     );
 
     await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(true);
@@ -61,7 +57,6 @@ describe("Marketplace", async () => {
     })
     
     it('should fail if signer does not have minter role', async () => {
-      await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.reverts();
       await itemMock.mock.safeTransferFrom.returns();
 
@@ -81,7 +76,6 @@ describe("Marketplace", async () => {
 
     // It would be better to have a method like toHaveBeenCalled in safeTransferFrom to check the transfer
     it.skip('should transfer the new minted item to the buyer', async () => {
-      await salesOrderCheckerMock.mock.verify.returns(user1.address);
       await itemMock.mock.mint.returns()
       await itemMock.mock.safeTransferFrom.returns()
 
