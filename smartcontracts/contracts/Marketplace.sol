@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import { ERC165, IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { IERC721, IERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import { SalesOrderChecker } from "./SalesOrderChecker.sol";
-import "./IMarketplaceNFT.sol";
-import "hardhat/console.sol";
+import { IMarketplaceNFT } from "./IMarketplaceNFT.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();

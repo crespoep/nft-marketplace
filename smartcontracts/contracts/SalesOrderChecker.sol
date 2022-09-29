@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {EIP712, ECDSA} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import { EIP712, ECDSA } from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 contract SalesOrderChecker is EIP712 {
   struct SalesOrder {

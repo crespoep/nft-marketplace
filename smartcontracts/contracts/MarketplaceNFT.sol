@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./IMarketplaceNFT.sol";
+import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { IMarketplaceNFT } from "./IMarketplaceNFT.sol";
 
 contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, AccessControl {
   bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
