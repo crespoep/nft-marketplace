@@ -19,6 +19,7 @@ error SellerCannotBuyItsOwnItem();
 error CallerIsNotOwner();
 error OperatorNotApproved();
 error UserDoesNotHaveMinterRole();
+error BuyerAndSellerAreTheSame();
 
 contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     struct Item {
@@ -66,19 +67,23 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         platformFee = _platformFee;
     }
 
-    function redeem(address _redeemer, SalesOrder calldata _salesOrder) public {
-        address _user = verify(_salesOrder);
+    function redeem(SalesOrder calldata _salesOrder) public payable {
+        address _seller = verify(_salesOrder);
+        address _redeemer = msg.sender;
+
+        _checkBuyerIsNotTheSeller(_seller);
+        _checkPaymentIsExact(_salesOrder.price);
 
         IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
-        nft.mint(_user, _salesOrder.tokenURI);
+        nft.mint(_seller, _salesOrder.tokenURI);
 
         IERC721(_salesOrder.contractAddress).safeTransferFrom(
-            _user,
+            _seller,
             _redeemer,
             _salesOrder.tokenId
         );
 
-        emit Minted(_user);
+        emit Minted(_seller);
     }
 
     function addItem(
@@ -135,8 +140,8 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     {
         Item memory _item = itemByAddressAndId[_nftAddress][_tokenId];
 
-        _checkBuyerIsNotTheSeller(_item);
-        _checkPaymentIsExact(_item);
+        _checkBuyerIsNotTheSeller(_item.seller);
+        _checkPaymentIsExact(_item.price);
 
         uint256 _initialPayment = msg.value;
         uint256 _payment = msg.value;
@@ -178,14 +183,14 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         require(success, "Transfer failed");
     }
 
-    function _checkBuyerIsNotTheSeller(Item memory _item) private view {
-        if (msg.sender == _item.seller) {
+    function _checkBuyerIsNotTheSeller(address _seller) private view {
+        if (_msgSender() == _seller) {
             revert SellerCannotBuyItsOwnItem();
         }
     }
 
-    function _checkPaymentIsExact(Item memory _item) private view {
-        if (msg.value != _item.price) {
+    function _checkPaymentIsExact(uint256 _price) private view {
+        if (msg.value != _price) {
             revert PaymentIsNotExact();
         }
     }

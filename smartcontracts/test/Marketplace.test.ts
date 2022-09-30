@@ -46,6 +46,8 @@ describe("Marketplace", async () => {
     let salesOrder: any;
 
     beforeEach(async () => {
+      await itemMock.mock.safeTransferFrom.returns();
+
       salesOrder = await createSalesOrder(
         marketplaceContract.address,
         itemMock.address,
@@ -59,28 +61,41 @@ describe("Marketplace", async () => {
     
     it('should fail if signer does not have minter role', async () => {
       await itemMock.mock.mint.reverts();
-      await itemMock.mock.safeTransferFrom.returns();
 
       await expect(
-        marketplaceContract.redeem(user2.address, salesOrder)
+        marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
       ).to.be.reverted
     });
   
+    it('should fail if buyer and seller are the same address', async () => {
+      await itemMock.mock.mint.reverts();
+
+      await expect(
+        marketplaceContract.connect(user1).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
+      ).to.be.revertedWithCustomError(marketplaceContract, 'SellerCannotBuyItsOwnItem')
+    });
+
+    it('should fail if payment is not exact', async () => {
+      await itemMock.mock.mint.reverts();
+
+      await expect(
+        marketplaceContract.connect(user2).redeem(salesOrder)
+      ).to.be.revertedWithCustomError(marketplaceContract, "PaymentIsNotExact");
+    });
+
     it('should mint a new item to the signer account', async () => {
       await itemMock.mock.mint.returns();
-      await itemMock.mock.safeTransferFrom.returns();
-    
+
       await expect(
-        marketplaceContract.redeem(user2.address, salesOrder)
+        marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
       ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
     });
 
     // It would be better to have a method like toHaveBeenCalled in safeTransferFrom to check the transfer
     it.skip('should transfer the new minted item to the buyer', async () => {
       await itemMock.mock.mint.returns()
-      await itemMock.mock.safeTransferFrom.returns()
 
-      await marketplaceContract.redeem(user2.address, salesOrder)
+      await marketplaceContract.connect(user2).redeem(salesOrder)
     });
   })
 
@@ -103,10 +118,10 @@ describe("Marketplace", async () => {
     it('should be reverted if item price is not greater than zero', async () => {
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, 0)
-      ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
+      ).to.be.revertedWithCustomError(marketplaceContract,"PriceMustBeGreaterThanZero");
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).not.to.be.revertedWith("PriceMustBeGreaterThanZero()");
+      ).not.to.be.revertedWithCustomError(marketplaceContract, "PriceMustBeGreaterThanZero");
     });
 
     it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
@@ -114,28 +129,28 @@ describe("Marketplace", async () => {
 
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWith("ProvidedAddressDoesNotSupportERC721Interface()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"ProvidedAddressDoesNotSupportERC721Interface")
     });
 
     it('should be reverted if nft was already added in the marketplace', async () => {
       await marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
       await expect(
         marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWith("ItemAlreadyExistsInTheMarketplace()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"ItemAlreadyExistsInTheMarketplace")
     });
 
     it('should fail if caller is not the owner of the item', async () => {
       await itemMock.mock.ownerOf.returns(user2.address)
 
       await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWith("CallerIsNotOwner()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"CallerIsNotOwner")
     });
 
     it('should fail if marketplace is not approved to manage the item', async () => {
       await itemMock.mock.isApprovedForAll.returns(false)
 
       await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWith("OperatorNotApproved()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"OperatorNotApproved")
     });
 
     it('should add the new item to the listing successfully', async () => {
@@ -162,7 +177,7 @@ describe("Marketplace", async () => {
       await expect(marketplaceContract.removeItem(
         itemMock.address,
         SECOND_ITEM_ID
-      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
     });
 
     it('should remove the item from listing', async () => {
@@ -188,14 +203,14 @@ describe("Marketplace", async () => {
         itemMock.address,
         SECOND_ITEM_ID,
         ITEM_PRICE_EXAMPLE
-      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
     });
 
     it('should fail if new price is not greater than zero', async () => {
       const newPrice = 0;
       await expect(
         marketplaceContract.updateItem(itemMock.address, FIRST_ITEM_ID, newPrice)
-      ).to.be.revertedWith("PriceMustBeGreaterThanZero()");
+      ).to.be.revertedWithCustomError(marketplaceContract,"PriceMustBeGreaterThanZero");
     });
 
     it('should change item price correctly', async () => {
@@ -229,26 +244,26 @@ describe("Marketplace", async () => {
       await expect(marketplaceContract.connect(user1).buyItem(
         itemMock.address,
         SECOND_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).to.be.revertedWith("ItemIsNotListedInTheMarketplace()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
     });
 
     it('should fail if buyer is the same as seller', async () => {
       await expect(marketplaceContract.connect(user1).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ethers.utils.parseEther("1") }
-      )).to.be.revertedWith("SellerCannotBuyItsOwnItem()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"SellerCannotBuyItsOwnItem")
     });
 
     it('should fail if payment is not exactly equal to item price', async () => {
       await expect(marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ethers.utils.parseEther("0.9") }
-      )).to.be.revertedWith("PaymentIsNotExact()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"PaymentIsNotExact")
 
       await expect(marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ethers.utils.parseEther("1.1") }
-      )).to.be.revertedWith("PaymentIsNotExact()")
+      )).to.be.revertedWithCustomError(marketplaceContract,"PaymentIsNotExact")
     });
 
     it('should remove item from the listing after operation is done', async () => {
@@ -325,13 +340,13 @@ describe("Marketplace", async () => {
 
       await expect(
         marketplaceContract.connect(user1).withdrawPayments()
-      ).to.be.revertedWith("NoPaymentsAvailableToWithdraw()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"NoPaymentsAvailableToWithdraw")
     });
 
     it('should fail if there is no payment available to withdraw', async () => {
       await expect(
         marketplaceContract.connect(user1).withdrawPayments()
-      ).to.be.revertedWith("NoPaymentsAvailableToWithdraw()")
+      ).to.be.revertedWithCustomError(marketplaceContract,"NoPaymentsAvailableToWithdraw")
     });
   })
 
