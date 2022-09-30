@@ -21,13 +21,19 @@ error OperatorNotApproved();
 error UserDoesNotHaveMinterRole();
 
 contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
-    bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
-    bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
-
     struct Item {
         address seller;
         uint256 price;
     }
+
+    bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
+    bytes4 private constant INTERFACE_ID_ERC721 = 0x80ac58cd;
+
+    uint256 public platformFee;
+
+    mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
+
+    mapping(address => uint256) private payments;
 
     event ItemAdded(address seller, address nftAddress, uint256 price, uint256 tokenId);
 
@@ -40,12 +46,6 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     event RoyaltyPaid();
 
     event Minted(address minter);
-
-    mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
-
-    mapping(address => uint256) private payments;
-
-    uint256 public platformFee;
 
     modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
         Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];

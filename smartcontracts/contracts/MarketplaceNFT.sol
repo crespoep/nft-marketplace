@@ -45,17 +45,7 @@ contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, 
         return MAX_NFTS;
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
+    // The following functions are overrides required by Solidity
 
     function tokenURI(uint256 tokenId)
         public
@@ -73,5 +63,17 @@ contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, 
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721, ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
     }
 }
