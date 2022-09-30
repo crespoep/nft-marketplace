@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {SalesOrderChecker} from "./SalesOrderChecker.sol";
 import {IMarketplaceNFT} from "./IMarketplaceNFT.sol";
+import "hardhat/console.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -34,7 +35,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
     mapping(address => mapping(uint256 => Item)) public itemByAddressAndId;
 
-    mapping(address => uint256) private payments;
+    mapping(address => uint256) private balances;
 
     event ItemAdded(address seller, address nftAddress, uint256 price, uint256 tokenId);
 
@@ -82,6 +83,10 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
             _redeemer,
             _salesOrder.tokenId
         );
+
+        uint256 _feePayment = (platformFee * msg.value) / 1e2;
+        balances[owner()] = _feePayment;
+        balances[_seller] = msg.value - _feePayment;
 
         emit Minted(_seller);
     }
@@ -153,7 +158,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
             );
 
             if (royaltyAmount > 0) {
-                payments[receiver] += royaltyAmount;
+                balances[receiver] += royaltyAmount;
                 _payment -= royaltyAmount;
 
                 emit RoyaltyPaid();
@@ -161,8 +166,9 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         }
 
         uint256 _feePayment = (platformFee * _initialPayment) / 1e2;
-        payments[owner()] = _feePayment;
-        payments[_item.seller] += _payment - _feePayment;
+        balances[owner()] = _feePayment;
+
+        balances[_item.seller] += _payment - _feePayment;
 
         IERC721(_nftAddress).safeTransferFrom(_item.seller, _msgSender(), _tokenId);
 
@@ -172,15 +178,19 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     }
 
     function withdrawPayments() external nonReentrant {
-        uint256 _payment = payments[msg.sender];
+        uint256 _payment = balances[msg.sender];
 
         if (_payment == 0) {
             revert NoPaymentsAvailableToWithdraw();
         }
-        payments[msg.sender] = 0;
+        balances[msg.sender] = 0;
 
         (bool success, ) = payable(msg.sender).call{value: _payment}("");
         require(success, "Transfer failed");
+    }
+
+    function getBalance() external view returns(uint256) {
+        return balances[_msgSender()];
     }
 
     function _checkBuyerIsNotTheSeller(address _seller) private view {

@@ -90,12 +90,26 @@ describe("Marketplace", async () => {
         marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
       ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
     });
-
-    // It would be better to have a method like toHaveBeenCalled in safeTransferFrom to check the transfer
-    it.skip('should transfer the new minted item to the buyer', async () => {
-      await itemMock.mock.mint.returns()
-
-      await marketplaceContract.connect(user2).redeem(salesOrder)
+    
+    it("should add the payment fee to the owner's balance", async () => {
+      await itemMock.mock.mint.returns();
+      
+      const platformFee = await marketplaceContract.platformFee();
+      const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
+      
+      await marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
+      expect(await marketplaceContract.connect(deployer).getBalance()).to.equal(platformPayment)
+    });
+  
+    it("should add the payment to the seller's balance", async () => {
+      await itemMock.mock.mint.returns();
+  
+      const platformFee = await marketplaceContract.platformFee();
+      const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
+      const sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
+  
+      await marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
+      expect(await marketplaceContract.connect(user1).getBalance()).to.equal(sellerPayment)
     });
   })
 
@@ -292,21 +306,28 @@ describe("Marketplace", async () => {
         .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
     });
   })
-  
-  
 
   describe("withdrawal", async () => {
-    const platformFee = await marketplaceContract.platformFee();
-    const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
-    const sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
-
+    let
+      platformFee,
+      platformPayment: BigNumber,
+      sellerPayment: BigNumber
+    ;
+    
     beforeEach(async () => {
+      platformFee = await marketplaceContract.platformFee();
+      platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
+      sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
+      
       await marketplaceContract.connect(user1).addItem(
         itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
       )
     })
 
     it('should be done successfully', async () => {
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+      
       await expect(marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
@@ -318,18 +339,24 @@ describe("Marketplace", async () => {
     });
 
     it("should send platform fee to the owner", async () => {
-      await expect(marketplaceContract.connect(user2).buyItem(
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+      
+      expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
       ))
 
       await expect(
         await marketplaceContract.withdrawPayments()
-      ).to.changeEtherBalance(deployer, ITEM_PRICE_EXAMPLE);
+      ).to.changeEtherBalance(deployer, platformPayment);
     });
 
     it('should fail if trying to withdraw twice in a row', async () => {
-      await expect(marketplaceContract.connect(user2).buyItem(
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+      
+      expect(await marketplaceContract.connect(user2).buyItem(
         itemMock.address,
         FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
       ))
