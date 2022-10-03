@@ -15,13 +15,13 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
-    }
+    },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   gasReporter: {
-    enabled: !!(process.env.REPORT_GAS)
+    enabled: !!process.env.REPORT_GAS,
   },
   namedAccounts: {
     deployer: {
@@ -29,17 +29,17 @@ const config: HardhatUserConfig = {
     },
     user1: {
       default: 1,
-      4: 1
+      4: 1,
     },
     user2: {
       default: 2,
-      4: 2
+      4: 2,
     },
     user3: {
       default: 3,
-      4: 3
-    }
-  }
+      4: 3,
+    },
+  },
 };
 
 export default config;

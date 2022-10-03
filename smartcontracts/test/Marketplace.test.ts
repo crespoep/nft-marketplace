@@ -1,12 +1,15 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 // @ts-ignore
-import { Marketplace } from '../typechain-types'
-import { deployMockContract, MockContract } from "@ethereum-waffle/mock-contract";
+import { Marketplace } from "../typechain-types";
+import {
+  deployMockContract,
+  MockContract,
+} from "@ethereum-waffle/mock-contract";
 import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import {createSalesOrder} from "./helpers/EIP712";
-const ItemMock = require('../artifacts/contracts/mock/NFTMock.sol/NFTMock.json');
+import { createSalesOrder } from "./helpers/EIP712";
+const ItemMock = require("../artifacts/contracts/mock/NFTMock.sol/NFTMock.json");
 
 describe("Marketplace", async () => {
   const ITEM_PRICE_EXAMPLE = ethers.utils.parseEther("1");
@@ -17,15 +20,13 @@ describe("Marketplace", async () => {
   const FIRST_ITEM_ID = BigNumber.from("1");
   const SECOND_ITEM_ID = BigNumber.from("2");
 
-  let
-    deployer: SignerWithAddress,
+  let deployer: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     user3: SignerWithAddress,
     Marketplace,
     marketplaceContract: Marketplace,
-    itemMock: MockContract
-  ;
+    itemMock: MockContract;
 
   beforeEach(async () => {
     [deployer, user1, user2, user3] = await ethers.getSigners();
@@ -33,16 +34,344 @@ describe("Marketplace", async () => {
     itemMock = await deployMockContract(deployer, ItemMock.abi);
 
     Marketplace = await ethers.getContractFactory("Marketplace");
-    marketplaceContract = await Marketplace.deploy(
-      BigNumber.from(3)
-    );
+    marketplaceContract = await Marketplace.deploy(BigNumber.from(3));
 
     await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(true);
     await itemMock.mock.ownerOf.returns(user1.address);
     await itemMock.mock.isApprovedForAll.returns(true);
-  })
+  });
 
-  describe('redeem', async () => {
+  describe("deployment", async () => {
+    it("should be done successfully", async () => {
+      const address = marketplaceContract.address;
+
+      expect(address).not.to.equal(null);
+      expect(address).not.to.equal(0x0);
+      expect(address).not.to.equal("");
+      expect(address).not.to.equal(undefined);
+    });
+
+    it("should set the platform fee correctly", async () => {
+      expect(await marketplaceContract.platformFee()).to.equal(
+        BigNumber.from("3")
+      );
+    });
+  });
+
+  describe("adding an item", async () => {
+    it("should be reverted if price is not greater than zero", async () => {
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, 0)
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "PriceMustBeGreaterThanZero"
+      );
+    });
+
+    it("should be reverted if nft contract address does not implement ERC721 interface", async () => {
+      await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(false);
+
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "ProvidedAddressDoesNotSupportERC721Interface"
+      );
+    });
+
+    it("should be reverted if nft was already added in the marketplace", async () => {
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "ItemAlreadyExistsInTheMarketplace"
+      );
+    });
+
+    it("should be reverted if caller is not the owner of the item", async () => {
+      await itemMock.mock.ownerOf.returns(user2.address);
+
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWithCustomError(marketplaceContract, "CallerIsNotOwner");
+    });
+
+    it("should be reverted if marketplace is not approved to manage the item", async () => {
+      await itemMock.mock.isApprovedForAll.returns(false);
+
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "OperatorNotApproved"
+      );
+    });
+
+    it("should add the new item to the listing successfully", async () => {
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
+      )
+        .to.emit(marketplaceContract, "ItemAdded")
+        .withArgs(
+          user1.address,
+          itemMock.address,
+          ITEM_PRICE_EXAMPLE,
+          FIRST_ITEM_ID
+        );
+
+      const nft = await marketplaceContract.itemByAddressAndId(
+        itemMock.address,
+        FIRST_ITEM_ID
+      );
+
+      expect(nft.seller).to.equal(user1.address);
+      expect(nft.price).to.equal(ITEM_PRICE_EXAMPLE);
+    });
+  });
+
+  // quede en seguir revisando posibles refactorizaciones a partir de aca y ver si se puede mejorar el codigo principal
+  describe("removing an item", async () => {
+    beforeEach(async () => {
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
+    });
+
+    it("should be reverted if item does not exist", async () => {
+      await expect(
+        marketplaceContract.removeItem(itemMock.address, SECOND_ITEM_ID)
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "ItemIsNotListedInTheMarketplace"
+      );
+    });
+
+    it("should remove the item from listing", async () => {
+      await expect(
+        marketplaceContract.removeItem(itemMock.address, FIRST_ITEM_ID)
+      )
+        .to.emit(marketplaceContract, "ItemRemoved")
+        .withArgs(itemMock.address, FIRST_ITEM_ID);
+
+      const item = await marketplaceContract.itemByAddressAndId(
+        itemMock.address,
+        FIRST_ITEM_ID
+      );
+      expect(item.price).to.equal(0);
+    });
+  });
+
+  describe("updating an item", async () => {
+    beforeEach(async () => {
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
+    });
+
+    it("should be reverted if item does not exist", async () => {
+      await expect(
+        marketplaceContract.updateItem(
+          itemMock.address,
+          SECOND_ITEM_ID,
+          ITEM_PRICE_EXAMPLE
+        )
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "ItemIsNotListedInTheMarketplace"
+      );
+    });
+
+    it("should be reverted if new price is not greater than zero", async () => {
+      const newPrice = 0;
+      await expect(
+        marketplaceContract.updateItem(
+          itemMock.address,
+          FIRST_ITEM_ID,
+          newPrice
+        )
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "PriceMustBeGreaterThanZero"
+      );
+    });
+
+    it("should change item price correctly", async () => {
+      const newPrice = ITEM_PRICE_EXAMPLE.mul(2);
+
+      await expect(
+        marketplaceContract.updateItem(
+          itemMock.address,
+          FIRST_ITEM_ID,
+          newPrice
+        )
+      )
+        .to.emit(marketplaceContract, "ItemUpdated")
+        .withArgs(itemMock.address, FIRST_ITEM_ID, newPrice);
+
+      const item = await marketplaceContract.itemByAddressAndId(
+        itemMock.address,
+        FIRST_ITEM_ID
+      );
+      expect(item.price).to.equal(newPrice);
+    });
+  });
+
+  describe("buy an item", async () => {
+    beforeEach(async () => {
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
+
+      await itemMock.mock.safeTransferFrom.returns();
+    });
+
+    it("should be reverted if items does not exist", async () => {
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .buyItem(itemMock.address, SECOND_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "ItemIsNotListedInTheMarketplace"
+      );
+    });
+
+    it("should be reverted if buyer is the same as seller", async () => {
+      await expect(
+        marketplaceContract
+          .connect(user1)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ethers.utils.parseEther("1"),
+          })
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "SellerCannotBuyItsOwnItem"
+      );
+    });
+
+    it("should be reverted if payment is not exactly equal to item price", async () => {
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ethers.utils.parseEther("0.9"),
+          })
+      ).to.be.revertedWithCustomError(marketplaceContract, "PaymentIsNotExact");
+
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ethers.utils.parseEther("1.1"),
+          })
+      ).to.be.revertedWithCustomError(marketplaceContract, "PaymentIsNotExact");
+    });
+
+    it("should remove item from the listing after operation is done", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
+      expect(
+        await marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      );
+
+      const item = await marketplaceContract.itemByAddressAndId(
+        itemMock.address,
+        FIRST_ITEM_ID
+      );
+
+      expect(item.seller).to.equal(ethers.constants.AddressZero);
+      expect(item.price).to.equal(BigNumber.from("0"));
+    });
+
+    it("should emit the ItemBought event", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      )
+        .to.emit(marketplaceContract, "ItemBought")
+        .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address);
+    });
+
+    it("should update the seller account balance after discounting platform fee", async () => {
+      const platformFee = await marketplaceContract.platformFee();
+      const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
+      const sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
+
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
+      await marketplaceContract
+        .connect(user2)
+        .buyItem(itemMock.address, FIRST_ITEM_ID, {
+          value: ITEM_PRICE_EXAMPLE,
+        });
+
+      expect(await marketplaceContract.connect(user1).getBalance()).to.equal(
+        sellerPayment
+      );
+    });
+
+    it("should update the seller account balance correctly after discounting platform fee and royalties", async () => {
+      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(true);
+      await itemMock.mock.royaltyInfo.returns(
+        user3.address,
+        ethers.utils.parseEther("0.15")
+      );
+      await itemMock.mock.safeTransferFrom.returns();
+
+      const platformFee = await marketplaceContract.platformFee();
+      const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
+      const sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment).sub(
+        ethers.utils.parseEther("0.15")
+      );
+
+      await marketplaceContract
+        .connect(user2)
+        .buyItem(itemMock.address, FIRST_ITEM_ID, {
+          value: ITEM_PRICE_EXAMPLE,
+        });
+
+      expect(await marketplaceContract.connect(user1).getBalance()).to.equal(
+        sellerPayment
+      );
+    });
+  });
+
+  describe("redeem", async () => {
     let salesOrder: any;
 
     beforeEach(async () => {
@@ -57,25 +386,32 @@ describe("Marketplace", async () => {
         31337,
         user1
       );
-    })
-    
-    it('should fail if signer does not have minter role', async () => {
+    });
+
+    it("should be reverted if signer does not have minter role", async () => {
       await itemMock.mock.mint.reverts();
 
       await expect(
-        marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
-      ).to.be.reverted
+        marketplaceContract.connect(user2).redeem(salesOrder, {
+          value: ITEM_PRICE_EXAMPLE,
+        })
+      ).to.be.reverted;
     });
-  
-    it('should fail if buyer and seller are the same address', async () => {
+
+    it("should be reverted if buyer and seller are the same address", async () => {
       await itemMock.mock.mint.reverts();
 
       await expect(
-        marketplaceContract.connect(user1).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
-      ).to.be.revertedWithCustomError(marketplaceContract, 'SellerCannotBuyItsOwnItem')
+        marketplaceContract.connect(user1).redeem(salesOrder, {
+          value: ITEM_PRICE_EXAMPLE,
+        })
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "SellerCannotBuyItsOwnItem"
+      );
     });
 
-    it('should fail if payment is not exact', async () => {
+    it("should be reverted if payment is not exact", async () => {
       await itemMock.mock.mint.reverts();
 
       await expect(
@@ -83,255 +419,74 @@ describe("Marketplace", async () => {
       ).to.be.revertedWithCustomError(marketplaceContract, "PaymentIsNotExact");
     });
 
-    it('should mint a new item to the signer account', async () => {
+    it("should mint a new item to the signer account", async () => {
       await itemMock.mock.mint.returns();
 
       await expect(
-        marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
-      ).to.emit(marketplaceContract, "Minted").withArgs(user1.address)
+        marketplaceContract.connect(user2).redeem(salesOrder, {
+          value: ITEM_PRICE_EXAMPLE,
+        })
+      )
+        .to.emit(marketplaceContract, "Minted")
+        .withArgs(user1.address);
     });
-    
+
     it("should add the payment fee to the owner's balance", async () => {
       await itemMock.mock.mint.returns();
-      
+
       const platformFee = await marketplaceContract.platformFee();
       const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
-      
-      await marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
-      expect(await marketplaceContract.connect(deployer).getBalance()).to.equal(platformPayment)
+
+      await marketplaceContract.connect(user2).redeem(salesOrder, {
+        value: ITEM_PRICE_EXAMPLE,
+      });
+      expect(await marketplaceContract.connect(deployer).getBalance()).to.equal(
+        platformPayment
+      );
     });
-  
+
     it("should add the payment to the seller's balance", async () => {
       await itemMock.mock.mint.returns();
-  
+
       const platformFee = await marketplaceContract.platformFee();
       const platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
       const sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
-  
-      await marketplaceContract.connect(user2).redeem(salesOrder, { value: ITEM_PRICE_EXAMPLE })
-      expect(await marketplaceContract.connect(user1).getBalance()).to.equal(sellerPayment)
+
+      await marketplaceContract.connect(user2).redeem(salesOrder, {
+        value: ITEM_PRICE_EXAMPLE,
+      });
+      expect(await marketplaceContract.connect(user1).getBalance()).to.equal(
+        sellerPayment
+      );
     });
-  })
-
-  describe("deployment", async () => {
-    it('should be done successfully', async () => {
-      const address = marketplaceContract.address;
-
-      expect(address).not.to.equal(null);
-      expect(address).not.to.equal(0x0);
-      expect(address).not.to.equal("");
-      expect(address).not.to.equal(undefined);
-    });
-
-    it('should set the platform fee correctly', async () => {
-      expect(await marketplaceContract.platformFee()).to.equal(BigNumber.from("3"))
-    });
-  })
-
-  describe("adding an item", async () => {
-    it('should be reverted if item price is not greater than zero', async () => {
-      await expect(
-        marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, 0)
-      ).to.be.revertedWithCustomError(marketplaceContract,"PriceMustBeGreaterThanZero");
-      await expect(
-        marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).not.to.be.revertedWithCustomError(marketplaceContract, "PriceMustBeGreaterThanZero");
-    });
-
-    it('should be reverted if nft contract address does not implement ERC721 interface', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC721_ID).returns(false);
-
-      await expect(
-        marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWithCustomError(marketplaceContract,"ProvidedAddressDoesNotSupportERC721Interface")
-    });
-
-    it('should be reverted if nft was already added in the marketplace', async () => {
-      await marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
-      await expect(
-        marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWithCustomError(marketplaceContract,"ItemAlreadyExistsInTheMarketplace")
-    });
-
-    it('should fail if caller is not the owner of the item', async () => {
-      await itemMock.mock.ownerOf.returns(user2.address)
-
-      await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWithCustomError(marketplaceContract,"CallerIsNotOwner")
-    });
-
-    it('should fail if marketplace is not approved to manage the item', async () => {
-      await itemMock.mock.isApprovedForAll.returns(false)
-
-      await expect(marketplaceContract.connect(user1).addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.be.revertedWithCustomError(marketplaceContract,"OperatorNotApproved")
-    });
-
-    it('should add the new item to the listing successfully', async () => {
-      await expect(marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE)
-      ).to.emit(marketplaceContract, "ItemAdded")
-        .withArgs(user1.address, itemMock.address, ITEM_PRICE_EXAMPLE, FIRST_ITEM_ID)
-
-      const nft = await marketplaceContract.itemByAddressAndId(itemMock.address, 1)
-
-      expect(nft.seller).to.equal(user1.address)
-      expect(nft.price).to.equal(ITEM_PRICE_EXAMPLE)
-    });
-  })
-
-  describe("removing an item", async () => {
-    beforeEach(async () => {
-      await marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
-      )
-    })
-
-    it('should fail if item does not exist', async () => {
-      await expect(marketplaceContract.removeItem(
-        itemMock.address,
-        SECOND_ITEM_ID
-      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
-    });
-
-    it('should remove the item from listing', async () => {
-      await expect(marketplaceContract.removeItem(
-        itemMock.address,
-        FIRST_ITEM_ID
-      )).to.emit(marketplaceContract, "ItemRemoved").withArgs(itemMock.address, FIRST_ITEM_ID);
-
-      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, FIRST_ITEM_ID)
-      expect(item.price).to.equal(0)
-    });
-  })
-
-  describe("updating an item", async () => {
-    beforeEach(async () => {
-      await marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
-      )
-    })
-
-    it('should fail if item does not exist', async () => {
-      await expect(marketplaceContract.updateItem(
-        itemMock.address,
-        SECOND_ITEM_ID,
-        ITEM_PRICE_EXAMPLE
-      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
-    });
-
-    it('should fail if new price is not greater than zero', async () => {
-      const newPrice = 0;
-      await expect(
-        marketplaceContract.updateItem(itemMock.address, FIRST_ITEM_ID, newPrice)
-      ).to.be.revertedWithCustomError(marketplaceContract,"PriceMustBeGreaterThanZero");
-    });
-
-    it('should change item price correctly', async () => {
-      const newPrice = ITEM_PRICE_EXAMPLE.mul(2);
-
-      await expect(
-        marketplaceContract.updateItem(itemMock.address, FIRST_ITEM_ID, newPrice)
-      ).to
-        .emit(marketplaceContract, "ItemUpdated")
-        .withArgs(
-          itemMock.address,
-          FIRST_ITEM_ID,
-          newPrice
-        );
-
-      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, FIRST_ITEM_ID)
-      expect(item.price).to.equal(newPrice)
-    });
-  })
-
-  describe("buy an item", async () => {
-    beforeEach(async () => {
-      await marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
-      )
-
-      await itemMock.mock.safeTransferFrom.returns();
-    })
-
-    it('should fail if items does not exist', async () => {
-      await expect(marketplaceContract.connect(user1).buyItem(
-        itemMock.address,
-        SECOND_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).to.be.revertedWithCustomError(marketplaceContract,"ItemIsNotListedInTheMarketplace")
-    });
-
-    it('should fail if buyer is the same as seller', async () => {
-      await expect(marketplaceContract.connect(user1).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ethers.utils.parseEther("1") }
-      )).to.be.revertedWithCustomError(marketplaceContract,"SellerCannotBuyItsOwnItem")
-    });
-
-    it('should fail if payment is not exactly equal to item price', async () => {
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ethers.utils.parseEther("0.9") }
-      )).to.be.revertedWithCustomError(marketplaceContract,"PaymentIsNotExact")
-
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ethers.utils.parseEther("1.1") }
-      )).to.be.revertedWithCustomError(marketplaceContract,"PaymentIsNotExact")
-    });
-
-    it('should remove item from the listing after operation is done', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
-      await itemMock.mock.safeTransferFrom.returns();
-
-      expect(await marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      ))
-
-      const item = await marketplaceContract.itemByAddressAndId(itemMock.address, FIRST_ITEM_ID);
-
-      expect(item.seller).to.equal(ethers.constants.AddressZero)
-      expect(item.price).to.equal(BigNumber.from("0"))
-    });
-
-    it('should emit the ItemBought event', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
-      await itemMock.mock.safeTransferFrom.returns();
-
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).to.emit(marketplaceContract, "ItemBought")
-        .withArgs(user1.address, ITEM_PRICE_EXAMPLE, user2.address)
-    });
-  })
+  });
 
   describe("withdrawal", async () => {
-    let
-      platformFee,
-      platformPayment: BigNumber,
-      sellerPayment: BigNumber
-    ;
-    
+    let platformFee, platformPayment: BigNumber, sellerPayment: BigNumber;
+
     beforeEach(async () => {
       platformFee = await marketplaceContract.platformFee();
       platformPayment = platformFee.mul(ITEM_PRICE_EXAMPLE).div(1e2);
       sellerPayment = ITEM_PRICE_EXAMPLE.sub(platformPayment);
-      
-      await marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
-      )
-    })
 
-    it('should be done successfully', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
+    });
+
+    it("should be done successfully", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
       await itemMock.mock.safeTransferFrom.returns();
-      
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      ))
+
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      );
 
       await expect(
         await marketplaceContract.connect(user1).withdrawPayments()
@@ -339,27 +494,37 @@ describe("Marketplace", async () => {
     });
 
     it("should send platform fee to the owner", async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
       await itemMock.mock.safeTransferFrom.returns();
-      
-      expect(await marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      ))
+
+      expect(
+        await marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      );
 
       await expect(
         await marketplaceContract.withdrawPayments()
       ).to.changeEtherBalance(deployer, platformPayment);
     });
 
-    it('should fail if trying to withdraw twice in a row', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+    it("should be reverted if trying to withdraw twice in a row", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
       await itemMock.mock.safeTransferFrom.returns();
-      
-      expect(await marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      ))
+
+      expect(
+        await marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      );
 
       await expect(
         await marketplaceContract.connect(user1).withdrawPayments()
@@ -367,63 +532,88 @@ describe("Marketplace", async () => {
 
       await expect(
         marketplaceContract.connect(user1).withdrawPayments()
-      ).to.be.revertedWithCustomError(marketplaceContract,"NoPaymentsAvailableToWithdraw")
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "NoPaymentsAvailableToWithdraw"
+      );
     });
 
-    it('should fail if there is no payment available to withdraw', async () => {
+    it("should be reverted if there is no payment available to withdraw", async () => {
       await expect(
         marketplaceContract.connect(user1).withdrawPayments()
-      ).to.be.revertedWithCustomError(marketplaceContract,"NoPaymentsAvailableToWithdraw")
+      ).to.be.revertedWithCustomError(
+        marketplaceContract,
+        "NoPaymentsAvailableToWithdraw"
+      );
     });
-  })
+  });
 
   describe("royalties payment", async () => {
     beforeEach(async () => {
-      await marketplaceContract.connect(user1).addItem(
-        itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE
-      )
-    })
-
-    it('should not be done if item does not implement IERC2981', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
-      await itemMock.mock.safeTransferFrom.returns();
-
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).not.to.emit(marketplaceContract, "RoyaltyPaid");
+      await marketplaceContract
+        .connect(user1)
+        .addItem(itemMock.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
     });
 
-    it('should be done if item implements IERC2189', async () => {
+    it("should not be done if item does not implement IERC2981", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
+      await itemMock.mock.safeTransferFrom.returns();
+
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      ).not.to.emit(marketplaceContract, "RoyaltyPaid");
+    });
+
+    it("should be done if item implements IERC2189", async () => {
       await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(true);
       await itemMock.mock.safeTransferFrom.returns();
       // user3 will be the considered the token author
-      await itemMock.mock.royaltyInfo.returns(user3.address, ethers.utils.parseEther("0.15"))
+      await itemMock.mock.royaltyInfo.returns(
+        user3.address,
+        ethers.utils.parseEther("0.15")
+      );
 
-      await expect(marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).to.emit(marketplaceContract, "RoyaltyPaid");
+      await expect(
+        marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      ).to.emit(marketplaceContract, "RoyaltyPaid");
 
       await expect(
         await marketplaceContract.connect(user3).withdrawPayments()
       ).to.changeEtherBalance(user3, ethers.utils.parseEther("0.15"));
     });
 
-    it('should not be done if royalties amount is zero', async () => {
-      await itemMock.mock.supportsInterface.withArgs(IERC2981_ID).returns(false);
+    it("should not be done if royalties amount is zero", async () => {
+      await itemMock.mock.supportsInterface
+        .withArgs(IERC2981_ID)
+        .returns(false);
       await itemMock.mock.safeTransferFrom.returns();
       // user3 will be the considered the token author
-      await itemMock.mock.royaltyInfo.returns(user3.address, ethers.utils.parseEther("0"))
+      await itemMock.mock.royaltyInfo.returns(
+        user3.address,
+        ethers.utils.parseEther("0")
+      );
 
-      await expect(await marketplaceContract.connect(user2).buyItem(
-        itemMock.address,
-        FIRST_ITEM_ID, { value: ITEM_PRICE_EXAMPLE }
-      )).not.to.emit(marketplaceContract, "RoyaltyPaid");
+      await expect(
+        await marketplaceContract
+          .connect(user2)
+          .buyItem(itemMock.address, FIRST_ITEM_ID, {
+            value: ITEM_PRICE_EXAMPLE,
+          })
+      ).not.to.emit(marketplaceContract, "RoyaltyPaid");
 
       await expect(
         await marketplaceContract.withdrawPayments()
       ).to.changeEtherBalance(user3, ethers.utils.parseEther("0"));
     });
-  })
-})
+  });
+});

@@ -11,7 +11,7 @@
     "lint": "npx eslint . --ext .js",
     "lint-fix": "npx eslint . --ext .js --fix",
     "solhint": "solhint 'contracts/**/*.sol'",
-    "prettier": "prettier --write 'contracts/**/*.sol'"
+    "prettier": "prettier --write 'contracts/' 'test/' 'deploy/'"
   },
   "keywords": [],
   "author": "",

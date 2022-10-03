@@ -1,30 +1,24 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MarketplaceNFT } from '../typechain-types'
+import { MarketplaceNFT } from "../typechain-types";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
 describe("Marketplace NFT", async () => {
-  let
-    deployer: SignerWithAddress,
+  let deployer: SignerWithAddress,
     user1: SignerWithAddress,
     NFT,
-    nftContract: MarketplaceNFT
-  ;
+    nftContract: MarketplaceNFT;
 
   beforeEach(async () => {
     [deployer, user1] = await ethers.getSigners();
 
     NFT = await ethers.getContractFactory("MarketplaceNFT");
-    nftContract = await NFT.deploy(
-      "MyNFTs",
-      "MNFT",
-      2
-    );
-    await nftContract.deployed()
-  })
+    nftContract = await NFT.deploy("MyNFTs", "MNFT", 2);
+    await nftContract.deployed();
+  });
 
   describe("deployment", async () => {
-    it('should be done successfully', async () => {
+    it("should be done successfully", async () => {
       const address = nftContract.address;
 
       expect(address).not.to.equal(null);
@@ -33,16 +27,16 @@ describe("Marketplace NFT", async () => {
       expect(address).not.to.equal(undefined);
     });
 
-    it('should set the name and symbol correctly', async () => {
+    it("should set the name and symbol correctly", async () => {
       expect(await nftContract.name()).to.equal("MyNFTs");
       expect(await nftContract.symbol()).to.equal("MNFT");
     });
 
-    it('should set the max amount of nfts correctly', async () => {
-      expect(await nftContract.getMaxAmountOfNfts()).to.equal(2)
+    it("should set the max amount of nfts correctly", async () => {
+      expect(await nftContract.getMaxAmountOfNfts()).to.equal(2);
     });
 
-    it('should set admin role for the deployer', async () => {
+    it("should set admin role for the deployer", async () => {
       expect(
         await nftContract.hasRole(
           "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -50,38 +44,44 @@ describe("Marketplace NFT", async () => {
         )
       ).to.be.true;
     });
-  })
+  });
 
-  describe('minting', async () => {
+  describe("minting", async () => {
     let tokenURI: string;
 
     beforeEach(() => {
-      tokenURI = 'my_nft';
-    })
+      tokenURI = "my_nft";
+    });
 
-    it('should fail if max amount of nfts has been reached', async () => {
-      const minterRole = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MINTER_ROLE"));
+    it("should fail if max amount of nfts has been reached", async () => {
+      const minterRole = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes("MINTER_ROLE")
+      );
 
       await nftContract.grantRole(minterRole, user1.address);
 
-      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be.reverted;
-      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be.reverted;
+      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be
+        .reverted;
+      await expect(nftContract.mint(user1.address, tokenURI)).not.to.be
+        .reverted;
       await expect(nftContract.mint(user1.address, tokenURI)).to.be.reverted;
     });
 
-    it('should fail if user does not have minter role', async () => {
+    it("should fail if user does not have minter role", async () => {
       await expect(nftContract.mint(user1.address, tokenURI)).to.be.reverted;
     });
 
-    it('should set the tokenURI correctly', async () => {
-      const minterRole = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MINTER_ROLE"));
+    it("should set the tokenURI correctly", async () => {
+      const minterRole = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes("MINTER_ROLE")
+      );
 
       await nftContract.grantRole(minterRole, user1.address);
 
-      await nftContract.mint(user1.address, tokenURI)
+      await nftContract.mint(user1.address, tokenURI);
       const tokenId = 0;
 
-      expect(await nftContract.tokenURI(tokenId)).to.equal(tokenURI)
+      expect(await nftContract.tokenURI(tokenId)).to.equal(tokenURI);
     });
-  })
-})
+  });
+});

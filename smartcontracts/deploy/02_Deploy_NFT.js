@@ -4,14 +4,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
   const MarketplaceNFT = await deploy("MarketplaceNFT", {
     from: deployer,
-    args: [
-      "MyNFTs",
-      "MNFT",
-      1000
-    ],
+    args: ["MyNFTs", "MNFT", 1000],
     log: true,
   });
-  console.log("MarketplaceNFT contract: ", MarketplaceNFT.address)
+  console.log("MarketplaceNFT contract: ", MarketplaceNFT.address);
 };
 
 module.exports.tags = ["all", "test"];

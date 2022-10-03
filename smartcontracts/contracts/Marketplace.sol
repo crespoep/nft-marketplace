@@ -70,7 +70,6 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
     function redeem(SalesOrder calldata _salesOrder) public payable {
         address _seller = verify(_salesOrder);
-        address _redeemer = msg.sender;
 
         _checkBuyerIsNotTheSeller(_seller);
         _checkPaymentIsExact(_salesOrder.price);
@@ -78,15 +77,13 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
         nft.mint(_seller, _salesOrder.tokenURI);
 
-        IERC721(_salesOrder.contractAddress).safeTransferFrom(
+        _manageTransferAndPayments(
             _seller,
-            _redeemer,
-            _salesOrder.tokenId
+            _salesOrder.contractAddress,
+            _salesOrder.tokenId,
+            _salesOrder.price,
+            true
         );
-
-        uint256 _feePayment = (platformFee * msg.value) / 1e2;
-        balances[owner()] = _feePayment;
-        balances[_seller] = msg.value - _feePayment;
 
         emit Minted(_seller);
     }
@@ -148,13 +145,29 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         _checkBuyerIsNotTheSeller(_item.seller);
         _checkPaymentIsExact(_item.price);
 
-        uint256 _initialPayment = msg.value;
+        _manageTransferAndPayments(_item.seller, _nftAddress, _tokenId, _item.price, false);
+
+        delete itemByAddressAndId[_nftAddress][_tokenId];
+
+        emit ItemBought(_item.seller, _item.price, msg.sender);
+    }
+
+    function _manageTransferAndPayments(
+        address _seller,
+        address _nftAddress,
+        uint256 _tokenId,
+        uint256 _price,
+        bool justMinted
+    ) internal {
         uint256 _payment = msg.value;
 
-        if (ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC2981) != false) {
+        uint256 _feePayment = (platformFee * _payment) / 1e2;
+        balances[owner()] = _feePayment;
+
+        if (!justMinted && ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC2981) != false) {
             (address receiver, uint256 royaltyAmount) = IERC2981(_nftAddress).royaltyInfo(
                 _tokenId,
-                _item.price
+                _price
             );
 
             if (royaltyAmount > 0) {
@@ -165,16 +178,9 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
             }
         }
 
-        uint256 _feePayment = (platformFee * _initialPayment) / 1e2;
-        balances[owner()] = _feePayment;
+        balances[_seller] = _payment - _feePayment;
 
-        balances[_item.seller] += _payment - _feePayment;
-
-        IERC721(_nftAddress).safeTransferFrom(_item.seller, _msgSender(), _tokenId);
-
-        delete itemByAddressAndId[_nftAddress][_tokenId];
-
-        emit ItemBought(_item.seller, _item.price, msg.sender);
+        IERC721(_nftAddress).safeTransferFrom(_seller, _msgSender(), _tokenId);
     }
 
     function withdrawPayments() external nonReentrant {
@@ -189,7 +195,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         require(success, "Transfer failed");
     }
 
-    function getBalance() external view returns(uint256) {
+    function getBalance() external view returns (uint256) {
         return balances[_msgSender()];
     }
 

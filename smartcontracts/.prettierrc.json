@@ -10,6 +10,13 @@
         "bracketSpacing": false,
         "explicitTypes": "always"
       }
+    },
+    {
+      "files": ["*.test.ts", "*.js"],
+      "options": {
+        "printWidth": 80,
+        "tabWidth": 2
+      }
     }
   ]
 }
