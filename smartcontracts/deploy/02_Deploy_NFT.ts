@@ -1,4 +1,6 @@
-module.exports = async ({ getNamedAccounts, deployments }) => {
+import { DeployFunction } from "hardhat-deploy/dist/types";
+
+const func: DeployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
@@ -10,4 +12,5 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   console.log("MarketplaceNFT contract: ", MarketplaceNFT.address);
 };
 
-module.exports.tags = ["all", "test"];
+export default func;
+func.tags = ["all", "test"];

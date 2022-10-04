@@ -157,6 +157,22 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         emit ItemBought(_item.seller, _item.price, msg.sender);
     }
 
+    function withdrawPayments() external nonReentrant {
+        uint256 _payment = balances[msg.sender];
+
+        if (_payment == 0) {
+            revert NoPaymentsAvailableToWithdraw();
+        }
+        balances[msg.sender] = 0;
+
+        (bool success, ) = payable(msg.sender).call{value: _payment}("");
+        require(success, "Transfer failed");
+    }
+
+    function getBalance() external view returns (uint256) {
+        return balances[_msgSender()];
+    }
+
     function _manageTransferAndPayments(
         address _seller,
         address _nftAddress,
@@ -186,22 +202,6 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         balances[_seller] += _payment - _feePayment;
 
         IERC721(_nftAddress).safeTransferFrom(_seller, _msgSender(), _tokenId);
-    }
-
-    function withdrawPayments() external nonReentrant {
-        uint256 _payment = balances[msg.sender];
-
-        if (_payment == 0) {
-            revert NoPaymentsAvailableToWithdraw();
-        }
-        balances[msg.sender] = 0;
-
-        (bool success, ) = payable(msg.sender).call{value: _payment}("");
-        require(success, "Transfer failed");
-    }
-
-    function getBalance() external view returns (uint256) {
-        return balances[_msgSender()];
     }
 
     function _checkBuyerIsNotTheSeller(address _seller) private view {
