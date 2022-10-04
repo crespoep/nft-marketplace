@@ -1,5 +1,6 @@
 import { createIpfsUrl } from "../../../services/IPFS";
 import { bodyParser } from "../../../services/formidable";
+import { saveNFT } from "../../../services/DB";
 import { createRouter } from "next-connect";
 
 const router = createRouter();

@@ -1,8 +1,5 @@
 import { useState } from "react";
 import { ethers } from "ethers"
-import { createSalesOrder } from "../services/marketplace";
-import nftContractAddress from "../contracts/NFT/contract-address.json";
-import marketplaceContractAddress from "../contracts/Marketplace/contract-address.json";
 
 const CreateNFTForm = () => {
   const [ formInput, updateFormInput ] = useState({
@@ -21,6 +18,7 @@ const CreateNFTForm = () => {
 
     // improve validations
     if (!formInput.name || !Number(formInput.price) || !formInput.image) {
+      console.log("form has errors")
       return;
     }
 
@@ -32,26 +30,11 @@ const CreateNFTForm = () => {
     body.append("price", formInput.price)
     body.append("image", formInput.image)
 
-    // const res = await fetch('/api/nft/create', {
-    //   method: "POST",
-    //   body: body
-    // })
-    // console.log(res)
-    // contractAddress: nftItem.contractAddress,
-    //   tokenId: nftItem.tokenId,
-    //   tokenOwner: tokenOwner,
-    //   price: nftItem.price,
-    //   tokenURI: nftItem.tokenURI,
-    //   nonce: nonce
-    const nft = {
-      contractAddress: nftContractAddress.NFT,
-      tokenId: "1",
-      price: formInput.price,
-      tokenURI: "etete"
-    }
-
-    const salesOrder = await createSalesOrder(nft)
-    console.log(salesOrder)
+    const res = await fetch('/api/nfts/create', {
+      method: "POST",
+      body: body
+    })
+    console.log(res)
   }
 
   return (

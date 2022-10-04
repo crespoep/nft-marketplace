@@ -83,7 +83,7 @@ describe("Marketplace", async () => {
       );
     });
 
-    it("should be reverted if nft contract address does not implement ERC721 interface", async () => {
+    it("should be reverted if nfts contract address does not implement ERC721 interface", async () => {
       await NFTMockContract.mock.supportsInterface
         .withArgs(IERC721_ID)
         .returns(false);
@@ -98,7 +98,7 @@ describe("Marketplace", async () => {
       );
     });
 
-    it("should be reverted if nft was already added in the marketplace", async () => {
+    it("should be reverted if nfts was already added in the marketplace", async () => {
       await marketplaceContract
         .connect(user1)
         .addItem(NFTMockContract.address, FIRST_ITEM_ID, ITEM_PRICE_EXAMPLE);
