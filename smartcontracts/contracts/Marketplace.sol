@@ -8,7 +8,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {SalesOrderChecker} from "./SalesOrderChecker.sol";
 import {IMarketplaceNFT} from "./IMarketplaceNFT.sol";
-import "hardhat/console.sol";
 
 error PriceMustBeGreaterThanZero();
 error ItemAlreadyExistsInTheMarketplace();
@@ -20,7 +19,7 @@ error SellerCannotBuyItsOwnItem();
 error CallerIsNotOwner();
 error OperatorNotApproved();
 error UserDoesNotHaveMinterRole();
-error BuyerAndSellerAreTheSame();
+error ErrorOnNFTContract();
 
 contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
     struct Item {
@@ -75,17 +74,19 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         _checkPaymentIsExact(_salesOrder.price);
 
         IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
-        nft.mint(_seller, _salesOrder.tokenURI);
+        try nft.mint(_seller, _salesOrder.tokenURI) {
+            _manageTransferAndPayments(
+                _seller,
+                _salesOrder.contractAddress,
+                _salesOrder.tokenId,
+                _salesOrder.price,
+                true
+            );
 
-        _manageTransferAndPayments(
-            _seller,
-            _salesOrder.contractAddress,
-            _salesOrder.tokenId,
-            _salesOrder.price,
-            true
-        );
-
-        emit Minted(_seller);
+            emit ItemBought(_seller, _salesOrder.price, msg.sender);
+        } catch {
+            revert ErrorOnNFTContract();
+        }
     }
 
     function addItem(
@@ -116,6 +117,10 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         external
         itemListed(_nftAddress, _tokenId)
     {
+        IERC721 nft = IERC721(_nftAddress);
+        if (nft.ownerOf(_tokenId) != _msgSender()) {
+            revert CallerIsNotOwner();
+        }
         delete itemByAddressAndId[_nftAddress][_tokenId];
 
         emit ItemRemoved(_nftAddress, _tokenId);
@@ -162,7 +167,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         uint256 _payment = msg.value;
 
         uint256 _feePayment = (platformFee * _payment) / 1e2;
-        balances[owner()] = _feePayment;
+        balances[owner()] += _feePayment;
 
         if (!justMinted && ERC165(_nftAddress).supportsInterface(INTERFACE_ID_ERC2981) != false) {
             (address receiver, uint256 royaltyAmount) = IERC2981(_nftAddress).royaltyInfo(
@@ -178,7 +183,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
             }
         }
 
-        balances[_seller] = _payment - _feePayment;
+        balances[_seller] += _payment - _feePayment;
 
         IERC721(_nftAddress).safeTransferFrom(_seller, _msgSender(), _tokenId);
     }

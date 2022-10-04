@@ -1,12 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import {BigNumber} from "ethers";
 
 export const createSalesOrder = async (
   marketplaceContractAddress: string,
   nftContractAddress: string,
-  tokenId: number,
+  tokenId: BigNumber,
   price: object,
   tokenURI: string,
-  chainId: number,
+  chainId: string,
   signer: SignerWithAddress
 ) => {
   const {
@@ -31,11 +32,11 @@ export const createSalesOrder = async (
 const buildSalesOrder = async (
   marketplaceAddress: string,
   nftContractAddress: string,
-  tokenId: number,
+  tokenId: BigNumber,
   price: object,
   tokenURI: string,
   tokenOwner: string,
-  chainId: number
+  chainId: string
 ) => {
   const domain = {
     name: "LAZY_MARKETPLACE",
