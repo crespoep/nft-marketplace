@@ -12,16 +12,6 @@ const connect = async () => {
   return { signer, signerAddress, chainId };
 }
 
-const getProvider = connection => {
-  return new ethers.providers.Web3Provider(connection);
-}
-
-const getActiveAddress = async () => {
-  const connection = await getConnection();
-  const signerAddress = connection.selectedAddress;
-  return { signerAddress }
-}
-
 const getConnection = async () => {
   const { ethereum } = window
   ethereum.on("accountsChanged", accounts => {
@@ -32,6 +22,16 @@ const getConnection = async () => {
   })
 
   return ethereum;
+}
+
+const getProvider = connection => {
+  return new ethers.providers.Web3Provider(connection);
+}
+
+const getActiveAddress = async () => {
+  const connection = await getConnection();
+  const signerAddress = connection.selectedAddress;
+  return { signerAddress }
 }
 
 const getBalance = async (account) => {

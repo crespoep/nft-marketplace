@@ -1,8 +1,11 @@
-import { getContract } from "./ethereumConnectionManager";
+import { initContract } from "./ethereumConnectionManager";
 import { ethers } from "ethers";
+import { Marketplace } from '../contracts/Marketplace/contract-address.json';
+import { abi } from '../contracts/Marketplace/Marketplace.json';
 
 const getLastCreated = async () => {
-  const { contract } = await getContract();
+  const { contract } = await initContract(Marketplace, abi);
+
   return [];
 }
 
