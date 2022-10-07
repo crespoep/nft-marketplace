@@ -2,11 +2,15 @@ import { DeployFunction } from "hardhat-deploy/dist/types";
 const { networkConfig } = require("../helper-hardhat-config");
 import { BigNumber } from "ethers";
 
-const func: DeployFunction = async ({ getNamedAccounts, deployments, getChainId }) => {
+const func: DeployFunction = async ({
+  getNamedAccounts,
+  deployments,
+  getChainId,
+}) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
   const chainId = await getChainId();
-  
+
   const platformFee = networkConfig[chainId].platformFee;
 
   const Marketplace = await deploy("Marketplace", {

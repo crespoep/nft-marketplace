@@ -36,17 +36,17 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
     mapping(address => uint256) private balances;
 
-    event ItemAdded(address seller, address nftAddress, uint256 price, uint256 tokenId);
-
-    event ItemRemoved(address nftAddress, uint256 tokenId);
-
-    event ItemUpdated(address nftAddress, uint256 tokenId, uint256 price);
-
-    event ItemBought(address seller, uint256 price, address buyer);
-
+    event ItemAdded(uint256 tokenId, address nftAddress, address seller, uint256 price);
+    event ItemRemoved(uint256 tokenId, address nftAddress);
+    event ItemUpdated(uint256 tokenId, address nftAddress, uint256 price);
+    event ItemBought(
+        uint256 tokenId,
+        address nftAddress,
+        address seller,
+        uint256 price,
+        address buyer
+    );
     event RoyaltyPaid();
-
-    event Minted(address minter);
 
     modifier notAlreadyAdded(address _nftAddress, uint256 _tokenId) {
         Item memory nft = itemByAddressAndId[_nftAddress][_tokenId];
@@ -65,28 +65,6 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
     constructor(uint256 _platformFee) {
         platformFee = _platformFee;
-    }
-
-    function redeem(SalesOrder calldata _salesOrder) public payable {
-        address _seller = verify(_salesOrder);
-
-        _checkBuyerIsNotTheSeller(_seller);
-        _checkPaymentIsExact(_salesOrder.price);
-
-        IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
-        try nft.mint(_seller, _salesOrder.tokenURI) {
-            _manageTransferAndPayments(
-                _seller,
-                _salesOrder.contractAddress,
-                _salesOrder.tokenId,
-                _salesOrder.price,
-                true
-            );
-
-            emit ItemBought(_seller, _salesOrder.price, msg.sender);
-        } catch {
-            revert ErrorOnNFTContract();
-        }
     }
 
     function addItem(
@@ -110,7 +88,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
         itemByAddressAndId[_nftAddress][_tokenId] = Item(msg.sender, _itemPrice);
 
-        emit ItemAdded(msg.sender, _nftAddress, _itemPrice, _tokenId);
+        emit ItemAdded(_tokenId, _nftAddress, msg.sender, _itemPrice);
     }
 
     function removeItem(address _nftAddress, uint256 _tokenId)
@@ -123,7 +101,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         }
         delete itemByAddressAndId[_nftAddress][_tokenId];
 
-        emit ItemRemoved(_nftAddress, _tokenId);
+        emit ItemRemoved(_tokenId, _nftAddress);
     }
 
     function updateItem(
@@ -136,7 +114,7 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
         Item storage _item = itemByAddressAndId[_nftAddress][_tokenId];
         _item.price = _price;
 
-        emit ItemUpdated(_nftAddress, _tokenId, _price);
+        emit ItemUpdated(_tokenId, _nftAddress, _price);
     }
 
     function buyItem(address _nftAddress, uint256 _tokenId)
@@ -154,7 +132,35 @@ contract Marketplace is ReentrancyGuard, Ownable, SalesOrderChecker {
 
         delete itemByAddressAndId[_nftAddress][_tokenId];
 
-        emit ItemBought(_item.seller, _item.price, msg.sender);
+        emit ItemBought(_tokenId, _nftAddress, _item.seller, _item.price, msg.sender);
+    }
+
+    function redeem(SalesOrder calldata _salesOrder) external payable {
+        address _seller = verify(_salesOrder);
+
+        _checkBuyerIsNotTheSeller(_seller);
+        _checkPaymentIsExact(_salesOrder.price);
+
+        IMarketplaceNFT nft = IMarketplaceNFT(_salesOrder.contractAddress);
+        try nft.mint(_seller, _salesOrder.tokenURI) {
+            _manageTransferAndPayments(
+                _seller,
+                _salesOrder.contractAddress,
+                _salesOrder.tokenId,
+                _salesOrder.price,
+                true
+            );
+
+            emit ItemBought(
+                _salesOrder.tokenId,
+                _salesOrder.contractAddress,
+                _seller,
+                _salesOrder.price,
+                msg.sender
+            );
+        } catch {
+            revert ErrorOnNFTContract();
+        }
     }
 
     function withdrawPayments() external nonReentrant {

@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {BigNumber} from "ethers";
+import { BigNumber } from "ethers";
 
 export const createSalesOrder = async (
   marketplaceContractAddress: string,

@@ -12,9 +12,9 @@ export const networkConfig = {
     name: "mainnet",
     platformFee: "",
   },
-  // Mumbai
-  999: {
-    name: "",
+  // Goerli
+  5: {
+    name: "goerli",
     platformFee: "3", // %3
   }
 };

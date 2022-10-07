@@ -4,6 +4,7 @@ import { HardhatUserConfig } from "hardhat/config";
 // Disabled until mocking be developed, using mocking from hardhat-waffle
 // import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomiclabs/hardhat-ganache";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-waffle";
 
@@ -16,6 +17,16 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 31337,
     },
+    goerli: {
+      chainId: 5,
+      url: process.env.GOERLI_URL || "",
+      // @ts-ignore
+      accounts: [
+        process.env.PRIVATE_KEY_DEPLOYER,
+        process.env.PRIVATE_KEY_USER_1,
+        process.env.PRIVATE_KEY_USER_2,
+      ].filter((x) => x !== undefined),
+    }
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
