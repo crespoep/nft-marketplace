@@ -4,9 +4,9 @@ import { HardhatUserConfig } from "hardhat/config";
 // Disabled until mocking be developed, using mocking from hardhat-waffle
 // import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-toolbox";
-import "@nomiclabs/hardhat-ganache";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-waffle";
+import "./tasks/mintNFT";
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

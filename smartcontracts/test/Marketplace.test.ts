@@ -449,8 +449,6 @@ describe("Marketplace", async () => {
     });
 
     it("should be reverted if buyer and seller are the same address", async () => {
-      await NFTMockContract.mock.mint.reverts();
-
       await expect(
         marketplaceContract.connect(user1).redeem(salesOrder, {
           value: ITEM_PRICE_EXAMPLE,
@@ -461,7 +459,7 @@ describe("Marketplace", async () => {
       );
     });
 
-    it("should be reverted if signer does not have minter role", async () => {
+    it("should be reverted if marketplace contract does not have minter role", async () => {
       await NFTMockContract.mock.mint.reverts();
 
       await expect(
@@ -475,8 +473,6 @@ describe("Marketplace", async () => {
     });
 
     it("should be reverted if payment is not exact", async () => {
-      await NFTMockContract.mock.mint.reverts();
-
       await expect(
         marketplaceContract.connect(user2).redeem(salesOrder)
       ).to.be.revertedWithCustomError(marketplaceContract, "PaymentIsNotExact");

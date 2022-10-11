@@ -5,6 +5,9 @@ import {ERC721, ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/ext
 import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IMarketplaceNFT} from "./IMarketplaceNFT.sol";
+import "hardhat/console.sol";
+
+error CallerDoesNotHaveMintingRole();
 
 contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, AccessControl {
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -19,13 +22,13 @@ contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, 
     ) ERC721(_name, _symbol) {
         MAX_NFTS = maxNfts;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
     }
 
     function mint(address _user, string memory _tokenURI) public {
         require(totalSupply() < MAX_NFTS);
-
-        if (!hasRole(MINTER_ROLE, _user)) {
-            revert();
+        if (!hasRole(MINTER_ROLE, msg.sender)) {
+            revert CallerDoesNotHaveMintingRole();
         }
 
         uint256 _newTokenId = totalSupply();
