@@ -1,0 +1,39 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Marketplace
+    network: goerli
+    source:
+      address: ""
+      abi: Marketplace
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ItemAdded
+        - ItemBought
+        - ItemRemoved
+        - ItemUpdated
+        - OwnershipTransferred
+        - RoyaltyPaid
+      abis:
+        - name: Marketplace
+          file: ./abis/Marketplace.json
+      eventHandlers:
+        - event: ItemAdded(uint256,address,address,uint256)
+          handler: handleItemAdded
+        - event: ItemBought(uint256,address,address,uint256,address)
+          handler: handleItemBought
+        - event: ItemRemoved(uint256,address)
+          handler: handleItemRemoved
+        - event: ItemUpdated(uint256,address,uint256)
+          handler: handleItemUpdated
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: RoyaltyPaid()
+          handler: handleRoyaltyPaid
+      file: ./src/marketplace.ts

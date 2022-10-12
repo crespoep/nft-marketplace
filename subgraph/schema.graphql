@@ -1,0 +1,7 @@
+type Item @entity {
+	id: ID!
+	tokenId: BigInt!,
+	nftAddress: Bytes!
+	owner: Bytes,
+	price: BigInt
+}
