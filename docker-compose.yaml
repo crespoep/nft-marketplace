@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  client:
+    container_name: client
+    build: "./client/"
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./client:/client"
+    networks: ["nft-marketplace"]
+
+  smart-contracts:
+    container_name: smart-contracts
+    build: "./smart-contracts/"
+    ports:
+      - "8546:8545"
+    volumes:
+      - "./smart-contracts:/smart-contracts"
+    networks: ["nft-marketplace"]
+
+  db:
+    container_name: db
+    image: "mongo:latest"
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+    ports:
+      - "27017:27017"
+    volumes:
+      - "mongo-data:/var/lib/mongodb"
+
+volumes:
+  mongo-data:
+
+networks:
+  nft-marketplace:
+    name: nft-marketplace
