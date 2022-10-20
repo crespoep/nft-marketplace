@@ -6,7 +6,8 @@ const mintNFT = task("mint-nft", "creation of nfts")
   .addParam("user", "")
   .addParam("tokenuri", "")
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const contract = await hre.ethers.getContractAt(
+    // @ts-ignore
+      const contract = await hre.ethers.getContractAt(
       "MarketplaceNFT",
       taskArgs.contract
     );

@@ -1,21 +1,28 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { MarketplaceNFT } from "../typechain-types";
+import { MarketplaceNFT, Marketplace } from "../typechain-types";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import {min} from "hardhat/internal/util/bigint";
 
 describe("Marketplace NFT", async () => {
+  const PLATFORM_FEE = 2;
+  const MAX_AMOUNT_OF_NFTS = 2;
+  
   let deployer: SignerWithAddress,
     user1: SignerWithAddress,
     user2: SignerWithAddress,
     NFT,
-    nftContract: MarketplaceNFT;
+    nftContract: MarketplaceNFT,
+    Marketplace,
+    marketplace: Marketplace
+  ;
 
   beforeEach(async () => {
     [deployer, user1, user2] = await ethers.getSigners();
-
+    
+    Marketplace = await ethers.getContractFactory("Marketplace");
+    marketplace = await Marketplace.deploy(PLATFORM_FEE);
     NFT = await ethers.getContractFactory("MarketplaceNFT");
-    nftContract = await NFT.deploy("MyNFTs", "MNFT", 2);
+    nftContract = await NFT.deploy("MyNFTs", "MNFT", MAX_AMOUNT_OF_NFTS, marketplace.address);
     await nftContract.deployed();
   });
 
@@ -54,6 +61,10 @@ describe("Marketplace NFT", async () => {
           minterRole,
           deployer.address
       )).to.be.true
+    });
+  
+    it.skip('should approve marketplace contract to operate all tokens', async () => {
+      expect(await nftContract.isApprovedForAll(deployer.address, marketplace.address)).to.be.true;
     });
   });
 

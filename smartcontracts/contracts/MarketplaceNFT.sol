@@ -18,11 +18,13 @@ contract MarketplaceNFT is IMarketplaceNFT, ERC721Enumerable, ERC721URIStorage, 
     constructor(
         string memory _name,
         string memory _symbol,
-        uint256 maxNfts
+        uint256 maxNfts,
+        address _marketplace
     ) ERC721(_name, _symbol) {
         MAX_NFTS = maxNfts;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, _marketplace);
     }
 
     function mint(address _user, string memory _tokenURI) public {

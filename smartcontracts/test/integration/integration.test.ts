@@ -17,7 +17,7 @@
 //     NFT,
 //     SalesOrder,
 //     marketplace: Marketplace,
-//     nft: MarketplaceNFT
+//     nfts: MarketplaceNFT
 //   ;
 //
 //   beforeEach(async () => {
@@ -30,7 +30,7 @@
 //     SalesOrder = await deployments.get("SalesOrderChecker");
 //
 //     marketplace = await ethers.getContractAt("Marketplace", Marketplace.address);
-//     nft = await ethers.getContractAt("MarketplaceNFT", NFT.address);
+//     nfts = await ethers.getContractAt("MarketplaceNFT", NFT.address);
 //   })
 //
 //   it('redeeming should mint a new item and transfers it correctly to the owner', async () => {
@@ -51,7 +51,7 @@
 //     }
 //
 //     let salesOrder = {
-//       contractAddress: nft.address,
+//       contractAddress: nfts.address,
 //       tokenId: FIRST_ITEM_ID,
 //       tokenOwner: user1.address,
 //       price: ONE_ETHER,
@@ -63,13 +63,13 @@
 //     salesOrder = {...salesOrder, signature};
 //
 //     const minterRole = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MINTER_ROLE"));
-//     await nft.grantRole(minterRole, user1.address);
+//     await nfts.grantRole(minterRole, user1.address);
 //
-//     await nft.connect(user1).setApprovalForAll(marketplace.address, true);
+//     await nfts.connect(user1).setApprovalForAll(marketplace.address, true);
 //
 //     await marketplace.redeem(user2.address, salesOrder);
 //
-//     const owner = await nft.ownerOf(FIRST_ITEM_ID);
+//     const owner = await nfts.ownerOf(FIRST_ITEM_ID);
 //     expect(owner).to.equal(user2.address)
 //   });
 // })

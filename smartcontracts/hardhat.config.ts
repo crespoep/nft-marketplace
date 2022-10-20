@@ -6,7 +6,10 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-waffle";
-import "./tasks/mintNFT";
+import "./tasks/NFT/mintNFT";
+import "./tasks/Marketplace/addItem";
+import "./tasks/NFT/grantRole";
+import "./tasks/NFT/approveOperator";
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
