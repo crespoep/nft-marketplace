@@ -21,12 +21,11 @@ services:
   db:
     container_name: db
     image: "mongo:latest"
-    environment:
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
     ports:
       - "27017:27017"
     volumes:
-      - "mongo-data:/var/lib/mongodb"
+      - "mongo-data:/data/db"
+    networks: ["nft-marketplace"]
 
 volumes:
   mongo-data:
