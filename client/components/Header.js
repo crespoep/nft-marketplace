@@ -16,7 +16,7 @@ const Header = ({
   }
 
   return (
-    <header className="flex flex-row justify-between h-14 items-center">
+    <header className="flex flex-row justify-end h-14 items-center bg-sky-500 w-full">
       <div className="flex flex-row items-center">
         <Navbar account={account} />
         {
