@@ -1,7 +1,7 @@
-import { getDocuments } from "../../../services/DB";
+import { getNFTs } from "../../../services/DB";
 
 export default async (req, res) => {
-  const doc = await getDocuments();
+  const doc = await getNFTs();
   console.log(doc)
   res.status(200).json(doc)
 }

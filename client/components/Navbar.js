@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const Navbar = () => (
+const Navbar = ({ account }) => (
   <nav className="hidden md:block">
     <ul className="flex">
       <li className="mr-4 text-black">
@@ -17,6 +17,17 @@ const Navbar = () => (
           About
         </Link>
       </li>
+      {
+        account && (
+          <li>
+            <Link
+              href="/profile"
+            >
+              My profile
+            </Link>
+          </li>
+        )
+      }
     </ul>
   </nav>
 )

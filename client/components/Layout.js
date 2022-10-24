@@ -1,13 +1,9 @@
 import styles from './layout.module.css'
-import { useState } from "react";
 import Head from 'next/head'
 import Image from "next/image";
 import Header from "./Header";
 
 export default function Layout({ children }) {
-  const [ account, setAccount ] = useState(null)
-  const [ balance, setBalance ] = useState(null)
-
   return (
     <div className={styles.main}>
       <Head>
@@ -15,7 +11,7 @@ export default function Layout({ children }) {
         <link rel="icon" href="/favicon.ico" />
         <title>NFT marketplace</title>
       </Head>
-      <Header account={account} setAccount={setAccount} balance={balance} setBalance={setBalance} />
+      <Header />
       <main className="w-11/12 m-auto">{children}</main>
       <footer className="flex flex-row justify-center items-center h-14 bg-zinc-500 w-full">
         Powered by{' '}

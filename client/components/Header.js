@@ -1,13 +1,13 @@
 import Navbar from "./Navbar";
 import AccountBalanceLabel from "./AccountBalanceLabel";
 import { getActiveAddress, getBalance } from "../services/ethereumConnectionManager";
+import { useAccountContext } from "./Context/AppContext"
+import {useState} from "react";
 
-const Header = ({
-  account,
-  setAccount,
-  balance,
-  setBalance
-}) => {
+const Header = () => {
+  const {account, setAccount} = useAccountContext()
+  const [balance, setBalance] = useState(null)
+
   const connectWallet = async () => {
     const { signerAddress } = await getActiveAddress();
     setAccount(signerAddress)

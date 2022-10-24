@@ -1,17 +1,8 @@
 import Head from 'next/head'
 import Layout from '../components/Layout'
 import Link from "next/link";
-import {useEffect} from "react";
 
 export default function About() {
-  useEffect(() => {
-    const func = async () => {
-      const et = await fetch('/api/nfts')
-      console.log(await et.json())
-    }
-  func()
-  }, [])
-
   return (
     <Layout>
       <Head>
