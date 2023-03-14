@@ -11,11 +11,20 @@ const Profile = () => {
       <Head>
         <title>Profile</title>
       </Head>
-      <h2>
-        <Link href="/">
-          Back to home
-        </Link>
-      </h2>
+      <div className="text-2xl my-5">
+        <ul>
+          <li className="my-2">
+            <Link href="/nfts/create">
+              Create an NFT
+            </Link>
+          </li>
+          <li>
+            <Link href="/">
+              Back to home
+            </Link>
+          </li>
+        </ul>
+      </div>
       <div>
         {account}
       </div>

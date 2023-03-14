@@ -5,7 +5,6 @@ const connect = async () => {
   const provider = getProvider(connection);
   const signer = provider.getSigner();
   const signerAddress = await signer.getAddress();
-
   const network = await provider.getNetwork();
   const chainId = network.chainId;
 

@@ -15,7 +15,6 @@ const saveNFT = async data => {
   const client = await clientPromise;
   const db = client.db();
   const collectionName = process.env.MONGODB_COLLECTION;
-
   const collection = db.collection(collectionName);
 
   return await collection.insertOne(data)

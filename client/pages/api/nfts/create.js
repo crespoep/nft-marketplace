@@ -1,5 +1,3 @@
-import { createIpfsUrl } from "../../../services/IPFS";
-import { bodyParser } from "../../../services/formidable";
 import { saveNFT } from "../../../services/DB";
 import { createRouter } from "next-connect";
 
@@ -8,20 +6,14 @@ const router = createRouter();
 router
   .post(async (req, res, next) => {
     try {
-      let { data, file } = await bodyParser(req)
-      const image = await createIpfsUrl(file)
+      // validate values before saving
 
-      data = {...data, image}
-      const jsonData = JSON.stringify(data)
-      const tokenURI = await createIpfsUrl(jsonData)
-
-      data = {...data, tokenURI}
-
-      await saveNFT(data)
+      const result = await saveNFT(JSON.parse(req.body))
+      console.log(result)
 
       return res.status(201).json({
         message: "Metadata created successfully",
-        tokenURI: `${process.env.IPFS_GATEWAY}/${tokenURI}`
+        // tokenURI: `${process.env.IPFS_GATEWAY}/${tokenURI}`
       })
     } catch(e) {
       console.log(e)
@@ -37,9 +29,3 @@ export default router.handler({
     res.status(404).json("Page is not found");
   },
 })
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

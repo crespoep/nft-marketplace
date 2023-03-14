@@ -13,7 +13,7 @@ services:
     container_name: smart-contracts
     build: "./smart-contracts/"
     ports:
-      - "8546:8545"
+      - "8545:8545"
     volumes:
       - "./smart-contracts:/smart-contracts"
     networks: ["nft-marketplace"]

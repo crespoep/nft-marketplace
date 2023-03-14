@@ -1,24 +1,40 @@
 import { useForm } from "react-hook-form";
 import Image from "next/image";
+import {createIpfsUrl} from "../../services/IPFS";
+import {createNFT} from "../../services/contractApi";
 
 const CreateNFTForm = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
-  const process = async fields => {
-    const body = new FormData();
-    body.append("name", fields.name)
-    body.append("price", fields.price)
-    body.append("image", fields.image[0])
+  const onSubmit = async fields => {
+    const file = fields.image[0];
+    const imageUrl = await createIpfsUrl(file)
 
-    const res = await fetch('/api/nfts/create', {
-      method: "POST",
-      body: body
-    })
-    console.log(res)
+    let data = {
+      name: fields.name,
+      price: fields.price,
+      imageUrl: imageUrl
+    }
+
+    const jsonData = JSON.stringify(data)
+    const tokenURI = await createIpfsUrl(jsonData)
+
+    if (fields.lazyMinting === '0') {
+      const receipt = await createNFT(tokenURI);
+      console.log(receipt)
+    } else {
+      data = {...data, tokenURI}
+
+      const res = await fetch('/api/nfts/create', {
+        method: "POST",
+        body: JSON.stringify(data)
+      })
+      console.log(res)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit(process)} className="flex flex-col text-xl w-full sm:w-96">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col text-xl w-full sm:w-96">
       <div className="flex flex-col justify-between m-2">
         <div className="flex flex-col sm:flex-row justify-between">
           <label htmlFor="name">Name</label>
@@ -74,7 +90,7 @@ const CreateNFTForm = () => {
                 value="0"
                 defaultChecked
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300"
-                {...register("lazy-minting")}
+                {...register("lazyMinting")}
               />
                 <label
                   htmlFor="mint-now"
@@ -92,7 +108,7 @@ const CreateNFTForm = () => {
                 name="minting"
                 value="1"
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300"
-                {...register("lazy-minting")}
+                {...register("lazyMinting")}
               />
                 <label
                   htmlFor="lazy-mint"
